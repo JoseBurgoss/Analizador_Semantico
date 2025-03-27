@@ -1,0 +1,38 @@
+program Ejemplo4;
+
+var 
+  x, z, i: integer;
+  y, name: string;
+  a, b: real;
+  flag: boolean;
+  c: char;
+  w: integer;
+
+procedure Saludar;
+begin
+  writeln('Hola, mundo!');
+end;
+
+function Sumar(a, b: integer): integer;
+begin
+  sumar := a + b;
+end;
+
+function SinRetorno(a: integer): integer;
+begin
+  x := a * 2;
+end;
+
+begin
+  name := 'Hola Mundo';
+  x := 15;
+  y := 'Texto'; 
+  w := 10;
+  
+  i := SinRetorno(5);
+  
+  if x > 10 then
+  begin
+    writeln('x es mayor que 10');
+  end;
+end.
