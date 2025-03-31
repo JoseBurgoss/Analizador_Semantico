@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 
+#define MAX_FUNCIONES 50
 typedef enum {
     TIPO_INTEGER,
     TIPO_STRING,
@@ -27,6 +28,7 @@ typedef struct {
     int num_parametros;
     bool retorno_asignado;
     int linea_declaracion;
+    bool tiene_retorno;
 } Funcion;
 
 typedef struct {
@@ -56,6 +58,7 @@ void analizar_llamada_funcion(const char* nombre_funcion, const char* argumentos
 char* extraer_argumentos_funcion(const char* str);
 bool es_llamada_funcion(const char* expr);
 void procesar_llamada_funcion(const char* expr, int num_linea);
+void toLowerCase(char *str);
 
 TipoDato obtener_tipo_desde_string(const char* tipo_str) {
     if (strcmp(tipo_str, "integer") == 0) return TIPO_INTEGER;
@@ -82,15 +85,22 @@ void agregar_variable(const char* nombre, TipoDato tipo, int linea) {
     }
 }
 
-void agregar_funcion(const char* nombre, TipoDato tipo_retorno, int linea) {
-    if (tabla.num_funciones < 50) {
-        strcpy(tabla.funciones[tabla.num_funciones].nombre, nombre);
-        tabla.funciones[tabla.num_funciones].tipo_retorno = tipo_retorno;
-        tabla.funciones[tabla.num_funciones].num_parametros = 0;
-        tabla.funciones[tabla.num_funciones].retorno_asignado = false;
-        tabla.funciones[tabla.num_funciones].linea_declaracion = linea;
-        tabla.num_funciones++;
+void agregar_funcion(const char* nombre, TipoDato tipo_retorno, int linea_declaracion) {
+    if (tabla.num_funciones >= MAX_FUNCIONES) {
+        fprintf(stderr, "Error: Número máximo de funciones alcanzado\n");
+        exit(1);
     }
+    
+    char nombre_lower[50];
+    strcpy(nombre_lower, nombre);
+    toLowerCase(nombre_lower);
+    
+    strcpy(tabla.funciones[tabla.num_funciones].nombre, nombre_lower);
+    tabla.funciones[tabla.num_funciones].tipo_retorno = tipo_retorno;
+    tabla.funciones[tabla.num_funciones].num_parametros = 0;
+    tabla.funciones[tabla.num_funciones].linea_declaracion = linea_declaracion;
+    tabla.funciones[tabla.num_funciones].tiene_retorno = false;
+    tabla.num_funciones++;
 }
 
 void agregar_parametro_funcion(const char* nombre_funcion, const char* nombre_param, TipoDato tipo) {
@@ -160,15 +170,14 @@ Funcion* buscar_funcion(const char* nombre) {
     toLowerCase(nombre_lower);
     
     for (int i = 0; i < tabla.num_funciones; i++) {
-        char func_name_lower[50];
-        strcpy(func_name_lower, tabla.funciones[i].nombre);
-        toLowerCase(func_name_lower);
+        char func_nombre_lower[50];
+        strcpy(func_nombre_lower, tabla.funciones[i].nombre);
+        toLowerCase(func_nombre_lower);
         
-        if (strcmp(func_name_lower, nombre_lower) == 0) {
+        if (strcmp(func_nombre_lower, nombre_lower) == 0) {
             return &tabla.funciones[i];
         }
     }
-    
     return NULL;
 }
 
@@ -193,6 +202,11 @@ bool verificar_tipos_compatibles(TipoDato tipo1, TipoDato tipo2) {
         (tipo1 == TIPO_REAL && tipo2 == TIPO_INTEGER)) {
         return true;
     }
+
+    if ((tipo1 == TIPO_CHAR && (tipo2 == TIPO_INTEGER || tipo2 == TIPO_REAL)) ||
+    (tipo2 == TIPO_CHAR && (tipo1 == TIPO_INTEGER || tipo1 == TIPO_REAL))) {
+    return false;
+}
     
     return false;
 }
@@ -317,14 +331,14 @@ bool es_palabra_clave_similar(const char* palabra, int num_linea) {
 
 bool validar_asignacion(const char* linea, int num_linea) {
     if (strstr(linea, "=") != NULL && strstr(linea, ":=") == NULL) {
-        mostrar_error("Operador de asignación inválido. Debe usar ':='", num_linea, linea);
+        mostrar_error("Operador de asignación invalido. Debe usar ':='", num_linea, linea);
         return false;
     }
 
     char* dos_puntos = strstr(linea, ":");
     char* igual = strstr(linea, "=");
     if ((dos_puntos && !igual) || (!dos_puntos && igual)) {
-        mostrar_error("Operador de asignación mal formado. Debe ser ':='", num_linea, linea);
+        mostrar_error("Operador de asignacion mal formado. Debe ser ':='", num_linea, linea);
         return false;
     }
     if (strstr(linea, ":=") != NULL) {
@@ -362,7 +376,7 @@ bool validar_condicion(const char* condicion, int num_linea) {
     }
     
     if (!operador_encontrado) {
-        mostrar_error("Condición inválida: falta operador de comparación válido", num_linea, condicion);
+        mostrar_error("Condición invalida: falta operador de comparacion valido", num_linea, condicion);
         return false;
     }
     return true;
@@ -433,22 +447,13 @@ void extraer_condicion_while(const char* linea, char* condicion) {
     }
 }
 
-void obtenerNombreFuncion(const char *cabecera, char *nombre, size_t tam) {
-    const char *ptr = cabecera;
-    while (*ptr && isspace(*ptr)) {
-        ptr++;
+void obtenerNombreFuncion(const char* linea, char* nombre, size_t tam) {
+    const char *ptr = linea;
+
+    if (strncmp(ptr, "function ", 9) == 0) {
+        ptr += 9;
     }
-    
-   const char *palabra = "function";
-    size_t len = strlen(palabra);
-    
-    if (strncasecmp(ptr, palabra, len) != 0) {
-        nombre[0] = '\0';
-        return;
-    }
-    
-    ptr += len;
-    
+
     while (*ptr && isspace(*ptr)) {
         ptr++;
     }
@@ -459,10 +464,14 @@ void obtenerNombreFuncion(const char *cabecera, char *nombre, size_t tam) {
         ptr++;
     }
     nombre[i] = '\0';
-    }
 
-void obtenerNombreProcedure(const char *cabecera, char *nombre, size_t tam) {
-    const char *ptr = cabecera;
+    toLowerCase(nombre);
+    
+    printf("DEBUG: nombre de funcion extraida: '%s' en la linea '%s'\n", nombre, linea);
+}
+
+void obtenerNombreProcedure(const char* linea, char* nombre, size_t tam) {
+    const char *ptr = linea;
     while (*ptr && isspace(*ptr)) {
         ptr++;
     }
@@ -487,6 +496,8 @@ void obtenerNombreProcedure(const char *cabecera, char *nombre, size_t tam) {
         ptr++;
     }
     nombre[i] = '\0';
+
+    toLowerCase(nombre);
 }
 
 void contenidoWriteln(char* linea, char* contenido) {
@@ -1024,10 +1035,18 @@ void analizar_palabra_clave(Nodo* arbol, const char* linea, int *num_linea, bool
 
 
 void analizar_cabecera_funcion(Nodo* arbol, char* linea, int num_linea, char* nombre_funcion) {
-    obtenerNombreFuncion(linea, nombre_funcion, sizeof(nombre_funcion));
+    obtenerNombreFuncion(linea, nombre_funcion, 50);
     char nombre_funcion_nosirve[256];
     int count = 0;
     bool semicolon = end_with_semicolon(linea);
+
+    if (strlen(nombre_funcion) == 0) {
+        mostrar_error("No se pudo extraer el nombre de la funcion", num_linea, linea);
+        return;
+    }
+    
+    printf("DEBUG: Procesando declaracion de funcion: '%s'\n", nombre_funcion);
+
     if (strncmp(linea, "function ", 9) != 0) {
         mostrar_error("La declaracion debe iniciar con 'function'", num_linea, linea);
     }
@@ -1064,11 +1083,14 @@ void analizar_cabecera_funcion(Nodo* arbol, char* linea, int num_linea, char* no
     trim_semicolon(partes[1]);
     toLowerCase(partes[1]);
     TipoDato tipo_retorno = obtener_tipo_desde_string(partes[1]);
-    
-    if (funcion_existe(nombre_funcion)) {
-        mostrar_error("Función ya declarada", num_linea, nombre_funcion);
+    Funcion* func = buscar_funcion(nombre_funcion);
+    if (func) {
+        func->tipo_retorno = tipo_retorno;
+        func->linea_declaracion = num_linea;
+        printf("DEBUG: Actualizada funcion '%s' con tipo %d\n", nombre_funcion, tipo_retorno);
     } else {
         agregar_funcion(nombre_funcion, tipo_retorno, num_linea);
+        printf("DEBUG: Agregada funcion '%s' con tipo %d\n", nombre_funcion, tipo_retorno);
     }
     
     if (sscanf(partes[0], "function %[^;];", nombre_funcion_nosirve) == 1) {
@@ -1172,6 +1194,8 @@ void analizar_funcion(Nodo* arbol, char* linea, int* num_linea, FILE* archivo, c
     strcpy(tabla.ambito_actual, nombre_funcion);
     
     bool retorno_encontrado = false;
+    Funcion* func = buscar_funcion(nombre_funcion);
+    TipoDato tipo_retorno = func ? func->tipo_retorno : TIPO_DESCONOCIDO;
 
     while (fgets(buffer, sizeof(buffer), archivo)) {
         (*num_linea)++;
@@ -1200,6 +1224,14 @@ void analizar_funcion(Nodo* arbol, char* linea, int* num_linea, FILE* archivo, c
                 }else if(strcmp(lowerVarName, lowerFuncName) == 0){
                     retorno_encontrado = true;
                     marcar_funcion_con_retorno(nombre_funcion);
+                    
+                    TipoDato tipo_valor = inferir_tipo_expresion(partesRetornoFuncion[1]);
+                    if (!verificar_tipos_compatibles(tipo_retorno, tipo_valor)) {
+                        char mensaje[100];
+                        sprintf(mensaje, "Tipo de retorno incompatible. Se esperaba %d pero se encontro %d", 
+                                tipo_retorno, tipo_valor);
+                        mostrar_error(mensaje, *num_linea, buffer);
+                    }
                 }
                 analizar_asignacion(nodo_cuerpo_funcion, buffer, *num_linea);
 
@@ -1215,17 +1247,16 @@ void analizar_funcion(Nodo* arbol, char* linea, int* num_linea, FILE* archivo, c
         }
         
         if (strcmp(buffer, "end;") == 0) {
-            Funcion* func = buscar_funcion(nombre_funcion);
-            if (func && func->tipo_retorno != TIPO_DESCONOCIDO && !retorno_encontrado) {
-                char mensaje[100];
-                sprintf(mensaje, "Si una funcion no retorna un valor cuando debería, debe generar un error");
-                mostrar_error(mensaje, *num_linea, nombre_funcion);
-            }
+    if (!retorno_encontrado && tipo_retorno != TIPO_DESCONOCIDO) {
+        char mensaje[100];
+        sprintf(mensaje, "La funcion '%s' debe retornar un valor de tipo %d", nombre_funcion, tipo_retorno);
+        mostrar_error(mensaje, *num_linea, nombre_funcion);
+    }
+  
+    strcpy(tabla.ambito_actual, ambito_anterior);
             break;
         }
     }
-    
-    strcpy(tabla.ambito_actual, ambito_anterior);
 }
 
 void analizar_expresion(Nodo* arbol, char* expr, int num_linea) {
@@ -1237,6 +1268,10 @@ void analizar_expresion(Nodo* arbol, char* expr, int num_linea) {
     char temp_expr[256];
     strcpy(temp_expr, expr);
     char *token = strtok(temp_expr, "+-*/()");
+
+    TipoDato tipo_resultado = TIPO_DESCONOCIDO;
+    bool first_operand = true;
+
     while (token != NULL) {
         trim(token);
         if (isalpha(token[0])) {  
@@ -1246,6 +1281,25 @@ void analizar_expresion(Nodo* arbol, char* expr, int num_linea) {
                     char mensaje[100];
                     sprintf(mensaje, "Variable '%s' utilizada antes de ser inicializada", token);
                     mostrar_advertencia(mensaje, num_linea);
+                }
+
+                if (first_operand) {
+                    tipo_resultado = var->tipo;
+                    first_operand = false;
+                } else {
+                    if (!verificar_tipos_compatibles(tipo_resultado, var->tipo)) {
+                        char mensaje[100];
+                        sprintf(mensaje, "Tipos incompatibles en la expresion. No se puede operar %d con %d", 
+                                tipo_resultado, var->tipo);
+                        mostrar_error(mensaje, num_linea, expr);
+                    }
+                    
+                    if ((tipo_resultado == TIPO_CHAR && (var->tipo == TIPO_INTEGER || var->tipo == TIPO_REAL)) ||
+                        (var->tipo == TIPO_CHAR && (tipo_resultado == TIPO_INTEGER || tipo_resultado == TIPO_REAL))) {
+                        char mensaje[100];
+                        sprintf(mensaje, "No se puede realizar operaciones aritmeticas entre char y tipos numericos");
+                        mostrar_error(mensaje, num_linea, expr);
+                    }
                 }
             }
         }
@@ -1279,7 +1333,7 @@ void analizar_expresion(Nodo* arbol, char* expr, int num_linea) {
 void analizar_llamada_funcion(const char* nombre_funcion, const char* argumentos, int num_linea) {
     Funcion* func = buscar_funcion(nombre_funcion);
     if (!func) {
-        mostrar_error("Función no declarada", num_linea, nombre_funcion);
+        mostrar_error("Funcion no declarada", num_linea, nombre_funcion);
         return;
     }
     
@@ -1291,7 +1345,7 @@ void analizar_llamada_funcion(const char* nombre_funcion, const char* argumentos
     
     if (count != func->num_parametros) {
         char mensaje[100];
-        sprintf(mensaje, "Número incorrecto de argumentos. Se esperaban %d pero se encontraron %d", 
+        sprintf(mensaje, "Numero incorrecto de argumentos. Se esperaban %d pero se encontraron %d", 
                 func->num_parametros, count);
         mostrar_error(mensaje, num_linea, nombre_funcion);
     } else {
@@ -1302,7 +1356,7 @@ void analizar_llamada_funcion(const char* nombre_funcion, const char* argumentos
             
             if (!verificar_tipos_compatibles(tipo_param, tipo_arg)) {
                 char mensaje[100];
-                sprintf(mensaje, "Tipo incompatible en el argumento %d. Se esperaba %d pero se encontró %d", 
+                sprintf(mensaje, "Tipo incompatible en el argumento %d. Se esperaba %d pero se encontro %d", 
                         i+1, tipo_param, tipo_arg);
                 mostrar_error(mensaje, num_linea, args[i]);
             }
@@ -1352,15 +1406,19 @@ void procesar_llamada_funcion(const char* expr, int num_linea) {
     for (int j = 0; j < tabla.num_funciones; j++) {
         printf("DEBUG: Funcion %d: '%s'\n", j, tabla.funciones[j].nombre);
     }
+
+    char nombre_lower[50];
+    strcpy(nombre_lower, nombre_funcion);
+    toLowerCase(nombre_lower);
     
-    Funcion* func = buscar_funcion(nombre_funcion);
+    Funcion* func = buscar_funcion(nombre_lower);
     if (!func) {
         char error_msg[100];
         sprintf(error_msg, "Funcion no declarada -> %s -> %s", nombre_funcion, expr);
         mostrar_error(error_msg, num_linea, expr);
         return;
     }
-    
+
     char* argumentos = extraer_argumentos_funcion(expr);
     if (!argumentos) {
         mostrar_error("Error al extraer argumentos de la funcion", num_linea, expr);
@@ -1377,15 +1435,15 @@ void procesar_llamada_funcion(const char* expr, int num_linea) {
         }
         free(args_copy);
     }
-    
+
     if (num_args != func->num_parametros) {
         char error_msg[100];
-        sprintf(error_msg, "Número incorrecto de argumentos para la funcion %s. Esperados: %d, Recibidos: %d", 
+        sprintf(error_msg, "Numero incorrecto de argumentos para la funcion %s. Esperados: %d, Recibidos: %d", 
                 nombre_funcion, func->num_parametros, num_args);
         mostrar_error(error_msg, num_linea, expr);
+        free(argumentos);
         return;
     }
-    
     
     free(argumentos);
 }
@@ -1459,14 +1517,76 @@ void analizar_asignacion(Nodo* arbol, const char* linea, int num_linea){
     }
 
     if (es_llamada_funcion(partes[1])) {
-        procesar_llamada_funcion(partes[1], num_linea);
+        char func_name[50] = {0};
+        int i = 0;
+        while (partes[1][i] && partes[1][i] != '(' && i < 49) {
+            func_name[i] = partes[1][i];
+            i++;
+        }
+        func_name[i] = '\0';
+        trim(func_name);
+
+        char func_name_lower[50];
+        strcpy(func_name_lower, func_name);
+        toLowerCase(func_name_lower);
+
+        Funcion* func = buscar_funcion(func_name_lower);
+        if (func) {
+            char* argumentos = extraer_argumentos_funcion(partes[1]);
+            if (!argumentos) {
+                mostrar_error("Error al extraer argumentos de la funcion", num_linea, partes[1]);
+                for (int i = 0; i < count; i++) {
+                    free(partes[i]);
+                }
+                free(partes);
+                return;
+            }
+
+            int num_args = 0;
+            if (strlen(argumentos) > 0) {
+                char* args_copy = strdup(argumentos);
+                char* token = strtok(args_copy, ",");
+                while (token) {
+                    num_args++;
+                    token = strtok(NULL, ",");
+                }
+                free(args_copy);
+            }
+       
+            if (num_args != func->num_parametros) {
+                char error_msg[100];
+                sprintf(error_msg, "Numero incorrecto de argumentos para la funcion %s. Esperados: %d, Recibidos: %d", 
+                        func_name, func->num_parametros, num_args);
+                mostrar_error(error_msg, num_linea, partes[1]);
+                free(argumentos);
+                for (int i = 0; i < count; i++) {
+                    free(partes[i]);
+                }
+                free(partes);
+                return;
+            }
+            
+            free(argumentos);
+
+            if (func->tipo_retorno != TIPO_DESCONOCIDO && !func->tiene_retorno) {
+                char mensaje[100];
+                sprintf(mensaje, "La funcion '%s' no tiene un valor de retorno asignado", func_name);
+                mostrar_error(mensaje, num_linea, partes[1]);
+ 
+                for (int i = 0; i < count; i++) {
+                    free(partes[i]);
+                }
+                free(partes);
+                return;
+            }
+        }
     }
 
     TipoDato tipo_derecha = inferir_tipo_expresion(partes[1]);
     
     if (!verificar_tipos_compatibles(tipo_izquierda, tipo_derecha)) {
         char mensaje[100];
-        sprintf(mensaje, "Tipos incompatibles en la asignación. Se esperaba %d pero se encontró %d", 
+        sprintf(mensaje, "Tipos incompatibles en la asignacion. Se esperaba %d pero se encontro %d", 
                 tipo_izquierda, tipo_derecha);
         mostrar_error(mensaje, num_linea, linea);
     }
@@ -1533,7 +1653,7 @@ void analizar_writeln(Nodo* arbol, const char* linea, int num_linea) {
     contenidoWriteln((char*)linea, contenido);
     trim((char*)linea);
     if (!end_with_semicolon(linea)) {
-        mostrar_error("La declaraciÃƒÂ³n debe terminar con ';'", num_linea, linea);
+        mostrar_error("La declaracion debe terminar con ';'", num_linea, linea);
     }
     if (strstr(linea, "writel") != NULL && strstr(linea, "writeln") == NULL) {
         mostrar_error("Comando incorrecto. ¿Quiso escribir 'writeln'?", num_linea, linea);
@@ -1806,13 +1926,65 @@ int main() {
 
     inicializar_tabla_simbolos();
 
-    const char *text = "Sumar := a + b + c * d;";
-
     Nodo* arbol = crear_nodo("programaPrueba", "");
     char linea[256];
     char nombre_funcion[50];
     char nombre_procedure[50];  
     int num_linea = 0;
+ 
+    while (fgets(linea, sizeof(linea), archivo)) {
+        trim(linea);
+        if (*linea == '\0') {
+            num_linea++;
+            continue;
+        }
+ 
+        char linea_lower[256];
+        strcpy(linea_lower, linea);
+        toLowerCase(linea_lower);
+        
+        if (starts_with(linea_lower, "function")) {
+            char temp_nombre[50] = {0};
+            
+            const char* ptr = linea + 9; 
+            while (*ptr && isspace(*ptr)) ptr++; 
+            
+            int i = 0;
+            while (*ptr && !isspace(*ptr) && *ptr != '(' && i < 49) {
+                temp_nombre[i++] = *ptr++;
+            }
+            temp_nombre[i] = '\0';
+
+            toLowerCase(temp_nombre);
+            
+            printf("DEBUG: declaracion de funcion encontrada: '%s'\n", temp_nombre);
+
+            char* dos_puntos = strrchr(linea, ':');
+            if (dos_puntos) {
+                char tipo_str[50] = {0};
+                char* semicolon = strchr(dos_puntos, ';');
+                if (semicolon) {
+                    strncpy(tipo_str, dos_puntos + 1, semicolon - dos_puntos - 1);
+                } else {
+                    strcpy(tipo_str, dos_puntos + 1);
+                }
+                trim(tipo_str);
+                toLowerCase(tipo_str);
+                
+                TipoDato tipo_retorno = obtener_tipo_desde_string(tipo_str);
+                if (!funcion_existe(temp_nombre)) {
+                agregar_funcion(temp_nombre, tipo_retorno, num_linea);
+                printf("DEBUG: Funcion pre-registrada '%s' con tipo %d\n", temp_nombre, tipo_retorno);
+                }
+            }
+        }
+        
+        num_linea++;
+    }
+
+    rewind(archivo);
+    num_linea = 0;
+
     while (fgets(linea, sizeof(linea), archivo)) {
         trim(linea);
         char ultima_linea[256];

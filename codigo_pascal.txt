@@ -1,3 +1,5 @@
+Versión 4: Función sin valor de retorno
+
 program Ejemplo4;
 
 var 
@@ -15,7 +17,7 @@ end;
 
 function Sumar(a, b: integer): integer;
 begin
-  sumar := a + b;
+  Sumar := a + b;
 end;
 
 function SinRetorno(a: integer): integer;
@@ -29,7 +31,7 @@ begin
   y := 'Texto'; 
   w := 10;
   
-  i := SinRetorno(5);
+  i := SinRetorno();
   
   if x > 10 then
   begin

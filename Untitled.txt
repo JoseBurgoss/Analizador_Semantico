@@ -139,7 +139,44 @@ begin
   y := 'Texto'; 
   w := 10;
   
-  i := SinRetorno(5);
+  i := SinRetorno();
+  
+  if x > 10 then
+  begin
+    writeln('x es mayor que 10');
+  end;
+end.
+
+Versión 5:  Tipos incompatibles en la expresion
+
+program Ejemplo1;
+
+var 
+  x, z, i: integer;
+  y, name: string;
+  a, b: real;
+  flag: boolean;
+  c: string;
+  w: integer;
+
+procedure Saludar;
+begin
+  writeln('Hola, mundo!');
+end;
+
+function Sumar(a, b: integer): integer;
+begin
+  Sumar := a + b;
+end;
+
+begin
+  name := 'Hola Mundo';
+  x := 15; 
+  y := 'Texto'; 
+  w := 5;
+  c := 'a'
+  
+  z := x + c;
   
   if x > 10 then
   begin
