@@ -182,59 +182,73 @@ This analyzer serves as a robust tool for validating Pascal code before compilat
 
 
 
-# **🏆 PLAN INTENSIVO 6 HORAS - Código Humano + Explicaciones**
+# **🏆 PLAN 6 HORAS - Adaptado a la Estructura Actual de Expo**
 
-## **⏰ PLAN DE 6 HORAS**
+## **⏰ HORA 1-2: CONFIGURACIÓN Y ESTRUCTURA EXISTENTE**
 
-### **HORA 1-2: CONFIGURACIÓN Y ESTRUCTURA BASE**
+### **1. Entender la Estructura Actual (30 min)**
+```
+mi-prueba/
+├── app/                    # ✅ NUEVA ESTRUCTURA - App Router
+│   ├── _layout.tsx        # ✅ Layout principal 
+│   └── (tabs)/            # ✅ Navegación por tabs
+│       ├── index.tsx      # ✅ Pantalla principal (HOME)
+│       └── explore.tsx    # ✅ Otra pantalla
+```
 
-#### **1. Crear Proyecto y Configuración (30 min)**
+### **2. Instalar Dependencias (15 min)**
 ```bash
-npx create-expo-app prueba-tecnica
-cd prueba-tecnica
+cd mi-prueba
 npm install @tanstack/react-query
 ```
 
-#### **2. App.js - Configuración Principal (30 min)**
-```javascript
-import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import PantallaPrincipal from './PantallaPrincipal';
+### **3. Configurar TanStack Query en el Layout (45 min)**
+**📍 Archivo: `app/_layout.tsx`**
 
-// ⚡ EXPLICACIÓN: QueryClient maneja el cache y estado de todas las queries
+```typescript
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Stack } from 'expo-router';
+
+// 🎯 EXPLICACIÓN: QueryClient maneja cache y estado de las queries
 // Lo creamos FUERA del componente para que no se reinicie en cada render
 const clienteQuery = new QueryClient({
   defaultOptions: {
     queries: {
-      // 🎯 POR QUÉ: Los datos se consideran "frescos" por 5 minutos
-      // Evita llamadas innecesarias a la API mientras los datos son recientes
+      // 🕒 Los datos se consideran "frescos" por 5 minutos
       staleTime: 5 * 60 * 1000,
+      // 🔄 Reintentar 2 veces antes de mostrar error
+      retry: 2,
     },
   },
 });
 
-export default function App() {
+export default function RootLayout() {
   return (
-    // 🔧 EXPLICACIÓN: QueryClientProvider provee el cliente a toda la app
-    // Así cualquier componente puede usar useQuery sin configurar nada
+    // 🔧 EXPLICACIÓN: QueryClientProvider provee el cliente a TODA la app
+    // Así cualquier pantalla puede usar useQuery sin configurar nada
     <QueryClientProvider client={clienteQuery}>
-      <PantallaPrincipal />
+      <Stack>
+        <Stack.Screen 
+          name="(tabs)" 
+          options={{ 
+            // 🎯 Ocultar header porque usamos tabs
+            headerShown: false 
+          }} 
+        />
+      </Stack>
     </QueryClientProvider>
   );
 }
 ```
 
-**🎯 DEFENSA:**
-- "Uso QueryClient fuera del componente para evitar recrearlo en cada render"
-- "Configuro staleTime para optimizar llamadas a la API"
-- "QueryClientProvider centraliza la gestión de estado de las APIs"
-
 ---
 
-### **HORA 2-4: COMPONENTE PRINCIPAL Y LÓGICA**
+## **⏰ HORA 2-4: PANTALLA PRINCIPAL CON TANSTACK QUERY**
 
-#### **3. PantallaPrincipal.js - Componente Completo (2 horas)**
-```javascript
+### **4. Modificar la Pantalla Principal (2 horas)**
+**📍 Archivo: `app/(tabs)/index.tsx`**
+
+```typescript
 import React, { useState } from 'react';
 import { 
   View, 
@@ -249,17 +263,15 @@ import { useQuery } from '@tanstack/react-query';
 
 // 🎯 EXPLICACIÓN: Función separada para llamadas a API
 // POR QUÉ: Separa la lógica de datos de la lógica de UI
-// Facilita testing y reutilización
 const obtenerUsuarios = async () => {
   console.log('🔍 Solicitando usuarios a la API...');
   
-  // ⏱️ EXPLICACIÓN: Simulamos delay de red para testing
+  // ⏱️ Simulamos delay de red para testing
   await new Promise(resolve => setTimeout(resolve, 1000));
   
   const respuesta = await fetch('https://jsonplaceholder.typicode.com/users');
   
-  // 🚨 POR QUÉ: Verificamos si la respuesta fue exitosa
-  // Fetch no lanza error automáticamente para códigos 400/500
+  // 🚨 VERIFICAMOS si la respuesta fue exitosa
   if (!respuesta.ok) {
     throw new Error(`Error ${respuesta.status}: ${respuesta.statusText}`);
   }
@@ -269,15 +281,23 @@ const obtenerUsuarios = async () => {
   return datos;
 };
 
-function PantallaPrincipal() {
+// 🎯 EXPLICACIÓN: Componente para cada item de la lista
+// POR QUÉ: Mejor organización y reutilización
+function TarjetaUsuario({ usuario }: { usuario: any }) {
+  return (
+    <View style={estilos.tarjeta}>
+      <Text style={estilos.nombre}>{usuario.name}</Text>
+      <Text style={estilos.correo}>{usuario.email}</Text>
+      <Text style={estilos.empresa}>{usuario.company.name}</Text>
+      <Text style={estilos.telefono}>{usuario.phone}</Text>
+    </View>
+  );
+}
+
+export default function TabOneScreen() {
   const [textoBusqueda, setTextoBusqueda] = useState('');
   
-  // 🎯 EXPLICACIÓN: useQuery maneja loading, error, data y cache automáticamente
-  // POR QUÉ usar TanStack Query vs useEffect+useState:
-  // - Cache automático
-  // - Reintentos automáticos
-  // - Actualizaciones en background
-  // - DevTools para debugging
+  // 🎯 EXPLICACIÓN: useQuery maneja loading, error, data automáticamente
   const { 
     data: usuarios, 
     isLoading: cargando,
@@ -286,20 +306,16 @@ function PantallaPrincipal() {
     refetch: recargar,
     isFetching: recargando
   } = useQuery({
-    queryKey: ['usuarios'], // 🔑 Key única para identificar esta query
+    queryKey: ['usuarios'], // 🔑 Key única para el cache
     queryFn: obtenerUsuarios, // 🛠️ Función que obtiene los datos
-    retry: 2, // 🔄 Reintentar 2 veces antes de mostrar error
   });
 
-  // 🎯 EXPLICACIÓN: Filtrado en el cliente
-  // POR QUÉ: Simple y rápido para datasets pequeños
-  // Para datasets grandes: implementar paginación en el servidor
+  // 🎯 EXPLICACIÓN: Filtrado en el cliente para búsqueda
   const usuariosFiltrados = usuarios?.filter(usuario =>
     usuario.name.toLowerCase().includes(textoBusqueda.toLowerCase())
   ) || [];
 
-  // 🎯 EXPLICACIÓN: Estados de UI separados
-  // POR QUÉ: Mejor experiencia de usuario mostrando estados específicos
+  // 🎯 EXPLICACIÓN: Estados de UI separados para mejor UX
   if (cargando && !recargando) {
     return (
       <View style={estilos.centrado}>
@@ -321,14 +337,11 @@ function PantallaPrincipal() {
     );
   }
 
-  // 🎯 EXPLICACIÓN: Renderizado principal
   return (
     <View style={estilos.contenedor}>
       <Text style={estilos.titulo}>Lista de Usuarios</Text>
       
-      {/* 🎯 EXPLICACIÓN: Input controlado */}
-      {/* POR QUÉ: value + onChangeText = input controlado */}
-      {/* Ventajas: Validación fácil, reset fácil, estado predecible */}
+      {/* 🎯 EXPLICACIÓN: Input controlado para búsqueda */}
       <TextInput
         style={estilos.buscador}
         placeholder="Buscar por nombre..."
@@ -337,11 +350,10 @@ function PantallaPrincipal() {
         clearButtonMode="while-editing"
       />
 
-      {/* 🎯 EXPLICACIÓN: FlatList vs ScrollView */}
-      {/* POR QUÉ FlatList: Rendimiento con listas grandes, lazy rendering */}
+      {/* 🎯 EXPLICACIÓN: FlatList para mejor rendimiento */}
       <FlatList
         data={usuariosFiltrados}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <TarjetaUsuario usuario={item} />
         )}
@@ -364,21 +376,7 @@ function PantallaPrincipal() {
   );
 }
 
-// 🎯 EXPLICACIÓN: Componente separado para cada item
-// POR QUÉ: Mejor organización, reutilizable, más fácil de testear
-function TarjetaUsuario({ usuario }) {
-  return (
-    <View style={estilos.tarjeta}>
-      <Text style={estilos.nombre}>{usuario.name}</Text>
-      <Text style={estilos.correo}>{usuario.email}</Text>
-      <Text style={estilos.empresa}>{usuario.company.name}</Text>
-      <Text style={estilos.telefono}>{usuario.phone}</Text>
-    </View>
-  );
-}
-
-// 🎯 EXPLICACIÓN: StyleSheet.create vs estilos en línea
-// POR QUÉ StyleSheet: Mejor rendimiento, validación, organización
+// 🎯 EXPLICACIÓN: StyleSheet para mejor rendimiento y organización
 const estilos = StyleSheet.create({
   contenedor: {
     flex: 1,
@@ -471,19 +469,17 @@ const estilos = StyleSheet.create({
     marginTop: 20
   }
 });
-
-export default PantallaPrincipal;
 ```
 
 ---
 
-### **HORA 4-5: PRÁCTICA Y MODIFICACIONES**
+## **⏰ HORA 4-5: PRÁCTICA Y MODIFICACIONES**
 
-#### **4. Ejercicios de Modificación (1 hora)**
-**Cambiar a API de Posts:**
-```javascript
-// En PantallaPrincipal.js, modifica:
+### **5. Ejercicio: Cambiar a API de Posts (30 min)**
+**En `app/(tabs)/index.tsx`, modifica:**
 
+```typescript
+// Cambiar la función de fetch
 const obtenerPosts = async () => {
   const respuesta = await fetch('https://jsonplaceholder.typicode.com/posts');
   if (!respuesta.ok) throw new Error('Error cargando posts');
@@ -502,87 +498,117 @@ queryFn: obtenerPosts,
 <Text style={estilos.correo}>{usuario.body}</Text>
 ```
 
-**Agregar Contador:**
-```javascript
-const [contador, setContador] = useState(0);
-
-// En el return, después del título:
+### **6. Agregar Funcionalidades Extra (30 min)**
+**Contador de resultados:**
+```typescript
+// Después del TextInput, agrega:
 <Text style={estilos.contador}>
   Mostrando {usuariosFiltrados.length} de {usuarios?.length || 0} usuarios
 </Text>
+
+// Y en estilos:
+contador: {
+  textAlign: 'center',
+  color: '#666',
+  marginBottom: 12,
+  fontSize: 14
+}
 ```
 
 ---
 
-### **HORA 5-6: DEFENSA Y PREGUNTAS TÍPICAS**
+## **⏰ HORA 5-6: DEFENSA Y PREGUNTAS TÉCNICAS**
 
-#### **5. Preguntas que Pueden Hacerte**
+### **7. Preguntas que Pueden Hacerte y Respuestas**
 
-**¿Por qué TanStack Query?**
+**¿Por qué usas esta estructura de Expo?**
 ```
-"Porque simplifica enormemente el manejo de estado asíncrono.
-Me da cache automático, reintentos, actualizaciones en background,
-y me evita escribir boilerplate code para loading y error states."
-```
-
-**¿useEffect vs useQuery?**
-```
-"useEffect es para efectos secundarios genéricos, useQuery está
-especializado en datos asíncronos. useQuery me da mejor performance
-con cache y no necesita dependencias manuales."
+"Expo App Router es la forma moderna de manejar rutas en React Native.
+Me permite tener un sistema de archivos basado en rutas, similar a Next.js,
+lo que hace el código más intuitivo y mantenible."
 ```
 
-**¿Por qué FlatList y no ScrollView?**
+**¿Por qué TanStack Query en lugar de useEffect?**
 ```
-"FlatList es más eficiente para listas largas porque solo renderiza
-los elementos visibles. ScrollView renderiza todo de una vez, lo que
-puede causar problemas de performance con muchos elementos."
-```
-
-**¿Cómo manejarías paginación?**
-```
-"Usaría useInfiniteQuery de TanStack Query, que está diseñado
-específicamente para paginación. Cargaría más datos cuando el
-usuario llegue al final de la lista."
+"TanStack Query está especializado en datos asíncronos. Me da cache automático,
+reintentos, actualizaciones en background, y evita el boilerplate de
+manejar loading y error states manualmente."
 ```
 
-**¿Por qué separar en componentes?**
+**¿Cómo manejarías una API que requiere autenticación?**
 ```
-"Para mantener el código mantenible y reutilizable. Cada componente
-tiene una responsabilidad única. Además, es más fácil de testear
-y debuggear."
+"Usaría el sistema de interceptors de TanStack Query o configuraría los headers
+de fetch globalmente. También podría usar el contexto de autenticación
+de Expo para manejar tokens."
+```
+
+**¿Por qué separar TarjetaUsuario en otro componente?**
+```
+"Por el principio de responsabilidad única. Cada componente debe tener
+una tarea específica. Esto hace el código más testeable, reutilizable
+y fácil de mantener."
+```
+
+**¿Qué ventajas tiene FlatList sobre ScrollView?**
+```
+"FlatList usa virtualización - solo renderiza los elementos visibles,
+lo que es crucial para performance con listas largas. ScrollView
+renderiza todo de una vez, lo que puede causar lag."
+```
+
+**¿Cómo mejorarías esta app?**
+```
+"Agregaría paginación con useInfiniteQuery, búsqueda en el servidor
+para datasets grandes, pull-to-refresh nativo, y maybe un sistema
+de favoritos usando el cache de TanStack Query."
+```
+
+### **8. Comandos Finales para la Prueba**
+```bash
+# En la terminal de SU laptop:
+npx create-expo-app prueba-tecnica
+cd prueba-tecnica
+npm install @tanstack/react-query
+
+# Modificar:
+# 1. app/_layout.tsx (agregar QueryClientProvider)
+# 2. app/(tabs)/index.tsx (nuestra pantalla principal)
+
+npm start
+# Presionar 'w' para web
 ```
 
 ---
 
 ## **🎯 CHECKLIST FINAL 6 HORAS**
 
-### **✅ HORA 1-2:**
-- [ ] Proyecto creado con Expo
-- [ ] TanStack Query instalado
-- [ ] App.js configurado con QueryClient
+### **✅ CONFIGURACIÓN:**
+- [ ] Entendí la estructura de Expo App Router
+- [ ] Sé modificar `app/_layout.tsx` para TanStack Query
+- [ ] Sé que `app/(tabs)/index.tsx` es la pantalla principal
 
-### **✅ HORA 2-4:**
-- [ ] PantallaPrincipal.js completo y funcional
+### **✅ CÓDIGO:**
+- [ ] Puedo crear la pantalla principal con useQuery
 - [ ] Entiendo cada hook y función
-- [ ] Puedo explicar por qué cada decisión
+- [ ] Puedo explicar por qué cada decisión técnica
 
-### **✅ HORA 4-5:**
-- [ ] Puedo modificar para usar diferente API
+### **✅ MODIFICACIONES:**
+- [ ] Puedo cambiar a diferente API
 - [ ] Puedo agregar funcionalidades simples
-- [ ] Entiendo los estilos y puedo modificarlos
+- [ ] Sé modificar estilos rápidamente
 
-### **✅ HORA 5-6:**
-- [ ] Puedo defender mis decisiones técnicas
-- [ ] Sé responder preguntas comunes
-- [ ] Puedo debuggear problemas básicos
+### **✅ DEFENSA:**
+- [ ] Puedo explicar por qué useQuery vs useEffect
+- [ ] Sé defender la estructura de componentes
+- [ ] Puedo responder preguntas técnicas comunes
 
 ## **🚀 ESTRATEGIA DURANTE LA PRUEBA**
 
-1. **Empieza simple** - Haz que algo funcione primero
-2. **Comenta en voz alta** - Explica lo que estás haciendo
-3. **Si te atoras** - Di "Voy a intentar esto..." en lugar de quedarte callado
-4. **Muestra progreso** - Commit mental de cada funcionalidad completada
+1. **Minuto 0-15:** Setup del proyecto y dependencias
+2. **Minuto 15-45:** Layout principal con TanStack Query
+3. **Minuto 45-90:** Pantalla principal funcional
+4. **Minuto 90-105:** Testing y mejoras
+5. **Minuto 105-120:** Preparar defensa y preguntas
 
-**¡Tú puedes! Este plan te da las herramientas para demostrar tu conocimiento.**
+**¡Tú puedes! Esta estructura es moderna y profesional - demuestra que estás actualizado.**
 
