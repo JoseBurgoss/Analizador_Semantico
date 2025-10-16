@@ -181,815 +181,448 @@ The analyzer can detect various errors, including:
 This analyzer serves as a robust tool for validating Pascal code before compilation, helping developers identify and fix errors early in the development process.
 
 
+🎵 APP DE MÚSICA - Versión Corregida
 
-# **🏆 PLAN 6 HORAS - Adaptado a la Estructura Actual de Expo**
+1. Layout Principal (igual)
 
-## **⏰ HORA 1-2: CONFIGURACIÓN Y ESTRUCTURA EXISTENTE**
-
-### **1. Entender la Estructura Actual (30 min)**
-```
-mi-prueba/
-├── app/                    # ✅ NUEVA ESTRUCTURA - App Router
-│   ├── _layout.tsx        # ✅ Layout principal 
-│   └── (tabs)/            # ✅ Navegación por tabs
-│       ├── index.tsx      # ✅ Pantalla principal (HOME)
-│       └── explore.tsx    # ✅ Otra pantalla
-```
-
-### **2. Instalar Dependencias (15 min)**
-```bash
-cd mi-prueba
-npm install @tanstack/react-query
-```
-
-### **3. Configurar TanStack Query en el Layout (45 min)**
-**📍 Archivo: `app/_layout.tsx`**
+📍 `app/_layout.tsx`
 
 ```typescript
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 
-// 🎯 EXPLICACIÓN: QueryClient maneja cache y estado de las queries
-// Lo creamos FUERA del componente para que no se reinicie en cada render
-const clienteQuery = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // 🕒 Los datos se consideran "frescos" por 5 minutos
-      staleTime: 5 * 60 * 1000,
-      // 🔄 Reintentar 2 veces antes de mostrar error
-      retry: 2,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   return (
-    // 🔧 EXPLICACIÓN: QueryClientProvider provee el cliente a TODA la app
-    // Así cualquier pantalla puede usar useQuery sin configurar nada
-    <QueryClientProvider client={clienteQuery}>
+    <QueryClientProvider client={queryClient}>
       <Stack>
-        <Stack.Screen 
-          name="(tabs)" 
-          options={{ 
-            // 🎯 Ocultar header porque usamos tabs
-            headerShown: false 
-          }} 
-        />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
     </QueryClientProvider>
   );
 }
 ```
 
----
+2. Configurar Tabs
 
-## **⏰ HORA 2-4: PANTALLA PRINCIPAL CON TANSTACK QUERY**
-
-### **4. Modificar la Pantalla Principal (2 horas)**
-**📍 Archivo: `app/(tabs)/index.tsx`**
+📍 `app/(tabs)/_layout.tsx`
 
 ```typescript
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  ActivityIndicator, 
-  TextInput, 
-  StyleSheet,
-  RefreshControl 
-} from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { Tabs } from 'expo-router';
+import { FontAwesome } from '@expo/vector-icons';
 
-// 🎯 EXPLICACIÓN: Función separada para llamadas a API
-// POR QUÉ: Separa la lógica de datos de la lógica de UI
-const obtenerUsuarios = async () => {
-  console.log('🔍 Solicitando usuarios a la API...');
-  
-  // ⏱️ Simulamos delay de red para testing
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  const respuesta = await fetch('https://jsonplaceholder.typicode.com/users');
-  
-  // 🚨 VERIFICAMOS si la respuesta fue exitosa
-  if (!respuesta.ok) {
-    throw new Error(`Error ${respuesta.status}: ${respuesta.statusText}`);
-  }
-  
-  const datos = await respuesta.json();
-  console.log(`✅ Recibidos ${datos.length} usuarios`);
-  return datos;
-};
-
-// 🎯 EXPLICACIÓN: Componente para cada item de la lista
-// POR QUÉ: Mejor organización y reutilización
-function TarjetaUsuario({ usuario }: { usuario: any }) {
+export default function TabLayout() {
   return (
-    <View style={estilos.tarjeta}>
-      <Text style={estilos.nombre}>{usuario.name}</Text>
-      <Text style={estilos.correo}>{usuario.email}</Text>
-      <Text style={estilos.empresa}>{usuario.company.name}</Text>
-      <Text style={estilos.telefono}>{usuario.phone}</Text>
-    </View>
-  );
-}
-
-export default function TabOneScreen() {
-  const [textoBusqueda, setTextoBusqueda] = useState('');
-  
-  // 🎯 EXPLICACIÓN: useQuery maneja loading, error, data automáticamente
-  const { 
-    data: usuarios, 
-    isLoading: cargando,
-    isError: hayError, 
-    error,
-    refetch: recargar,
-    isFetching: recargando
-  } = useQuery({
-    queryKey: ['usuarios'], // 🔑 Key única para el cache
-    queryFn: obtenerUsuarios, // 🛠️ Función que obtiene los datos
-  });
-
-  // 🎯 EXPLICACIÓN: Filtrado en el cliente para búsqueda
-  const usuariosFiltrados = usuarios?.filter(usuario =>
-    usuario.name.toLowerCase().includes(textoBusqueda.toLowerCase())
-  ) || [];
-
-  // 🎯 EXPLICACIÓN: Estados de UI separados para mejor UX
-  if (cargando && !recargando) {
-    return (
-      <View style={estilos.centrado}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={estilos.textoCarga}>Cargando lista de usuarios...</Text>
-      </View>
-    );
-  }
-
-  if (hayError) {
-    return (
-      <View style={estilos.centrado}>
-        <Text style={estilos.textoError}>Error cargando datos</Text>
-        <Text style={estilos.textoErrorSecundario}>{error.message}</Text>
-        <Text style={estilos.textoReintentar} onPress={recargar}>
-          Tocá para reintentar
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={estilos.contenedor}>
-      <Text style={estilos.titulo}>Lista de Usuarios</Text>
-      
-      {/* 🎯 EXPLICACIÓN: Input controlado para búsqueda */}
-      <TextInput
-        style={estilos.buscador}
-        placeholder="Buscar por nombre..."
-        value={textoBusqueda}
-        onChangeText={setTextoBusqueda}
-        clearButtonMode="while-editing"
+    <Tabs screenOptions={{ tabBarActiveTintColor: 'green' }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Inicio',
+          tabBarIcon: ({ color }) => <FontAwesome size={28} name="home" color={color} />,
+        }}
       />
-
-      {/* 🎯 EXPLICACIÓN: FlatList para mejor rendimiento */}
-      <FlatList
-        data={usuariosFiltrados}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <TarjetaUsuario usuario={item} />
-        )}
-        refreshControl={
-          <RefreshControl 
-            refreshing={recargando}
-            onRefresh={recargar}
-            colors={['#007AFF']}
-          />
-        }
-        ListEmptyComponent={
-          <Text style={estilos.listaVacia}>
-            {textoBusqueda ? 'No hay usuarios que coincidan' : 'No hay usuarios'}
-          </Text>
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={estilos.contenidoLista}
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Mi Perfil',
+          tabBarIcon: ({ color }) => <FontAwesome size={28} name="user" color={color} />,
+        }}
       />
-    </View>
+    </Tabs>
   );
 }
-
-// 🎯 EXPLICACIÓN: StyleSheet para mejor rendimiento y organización
-const estilos = StyleSheet.create({
-  contenedor: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f8f9fa'
-  },
-  titulo: {
-    fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginVertical: 16,
-    color: '#1c1c1e'
-  },
-  buscador: {
-    backgroundColor: 'white',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#c6c6c8',
-    fontSize: 16
-  },
-  contenidoLista: {
-    paddingBottom: 20
-  },
-  tarjeta: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  nombre: {
-    fontWeight: '600',
-    fontSize: 18,
-    marginBottom: 6,
-    color: '#000'
-  },
-  correo: {
-    color: '#007AFF',
-    marginBottom: 4,
-    fontSize: 15
-  },
-  empresa: {
-    fontStyle: 'italic',
-    color: '#3c3c43',
-    marginBottom: 2,
-    fontSize: 14
-  },
-  telefono: {
-    color: '#8e8e93',
-    fontSize: 14
-  },
-  centrado: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20
-  },
-  textoCarga: {
-    marginTop: 12,
-    color: '#8e8e93',
-    fontSize: 16
-  },
-  textoError: {
-    color: '#ff3b30',
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8
-  },
-  textoErrorSecundario: {
-    color: '#ff3b30',
-    textAlign: 'center',
-    marginBottom: 16,
-    fontSize: 14
-  },
-  textoReintentar: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '500'
-  },
-  listaVacia: {
-    textAlign: 'center',
-    color: '#8e8e93',
-    fontSize: 16,
-    marginTop: 20
-  }
-});
 ```
 
----
+3. Pantalla Home - Canciones Populares
 
-## **⏰ HORA 4-5: PRÁCTICA Y MODIFICACIONES**
-
-### **5. Ejercicio: Cambiar a API de Posts (30 min)**
-**En `app/(tabs)/index.tsx`, modifica:**
+📍 `app/(tabs)/index.tsx`
 
 ```typescript
-// Cambiar la función de fetch
-const obtenerPosts = async () => {
-  const respuesta = await fetch('https://jsonplaceholder.typicode.com/posts');
-  if (!respuesta.ok) throw new Error('Error cargando posts');
-  return respuesta.json();
-};
-
-// En useQuery:
-queryKey: ['posts'],
-queryFn: obtenerPosts,
-
-// En el render:
-<Text style={estilos.titulo}>Lista de Posts</Text>
-
-// En TarjetaUsuario:
-<Text style={estilos.nombre}>{usuario.title}</Text>
-<Text style={estilos.correo}>{usuario.body}</Text>
-```
-
-### **6. Agregar Funcionalidades Extra (30 min)**
-**Contador de resultados:**
-```typescript
-// Después del TextInput, agrega:
-<Text style={estilos.contador}>
-  Mostrando {usuariosFiltrados.length} de {usuarios?.length || 0} usuarios
-</Text>
-
-// Y en estilos:
-contador: {
-  textAlign: 'center',
-  color: '#666',
-  marginBottom: 12,
-  fontSize: 14
-}
-```
-
----
-
-## **⏰ HORA 5-6: DEFENSA Y PREGUNTAS TÉCNICAS**
-
-### **7. Preguntas que Pueden Hacerte y Respuestas**
-
-**¿Por qué usas esta estructura de Expo?**
-```
-"Expo App Router es la forma moderna de manejar rutas en React Native.
-Me permite tener un sistema de archivos basado en rutas, similar a Next.js,
-lo que hace el código más intuitivo y mantenible."
-```
-
-**¿Por qué TanStack Query en lugar de useEffect?**
-```
-"TanStack Query está especializado en datos asíncronos. Me da cache automático,
-reintentos, actualizaciones en background, y evita el boilerplate de
-manejar loading y error states manualmente."
-```
-
-**¿Cómo manejarías una API que requiere autenticación?**
-```
-"Usaría el sistema de interceptors de TanStack Query o configuraría los headers
-de fetch globalmente. También podría usar el contexto de autenticación
-de Expo para manejar tokens."
-```
-
-**¿Por qué separar TarjetaUsuario en otro componente?**
-```
-"Por el principio de responsabilidad única. Cada componente debe tener
-una tarea específica. Esto hace el código más testeable, reutilizable
-y fácil de mantener."
-```
-
-**¿Qué ventajas tiene FlatList sobre ScrollView?**
-```
-"FlatList usa virtualización - solo renderiza los elementos visibles,
-lo que es crucial para performance con listas largas. ScrollView
-renderiza todo de una vez, lo que puede causar lag."
-```
-
-**¿Cómo mejorarías esta app?**
-```
-"Agregaría paginación con useInfiniteQuery, búsqueda en el servidor
-para datasets grandes, pull-to-refresh nativo, y maybe un sistema
-de favoritos usando el cache de TanStack Query."
-```
-
-### **8. Comandos Finales para la Prueba**
-```bash
-# En la terminal de SU laptop:
-npx create-expo-app prueba-tecnica
-cd prueba-tecnica
-npm install @tanstack/react-query
-
-# Modificar:
-# 1. app/_layout.tsx (agregar QueryClientProvider)
-# 2. app/(tabs)/index.tsx (nuestra pantalla principal)
-
-npm start
-# Presionar 'w' para web
-```
-
----
-
-## **🎯 CHECKLIST FINAL 6 HORAS**
-
-### **✅ CONFIGURACIÓN:**
-- [ ] Entendí la estructura de Expo App Router
-- [ ] Sé modificar `app/_layout.tsx` para TanStack Query
-- [ ] Sé que `app/(tabs)/index.tsx` es la pantalla principal
-
-### **✅ CÓDIGO:**
-- [ ] Puedo crear la pantalla principal con useQuery
-- [ ] Entiendo cada hook y función
-- [ ] Puedo explicar por qué cada decisión técnica
-
-### **✅ MODIFICACIONES:**
-- [ ] Puedo cambiar a diferente API
-- [ ] Puedo agregar funcionalidades simples
-- [ ] Sé modificar estilos rápidamente
-
-### **✅ DEFENSA:**
-- [ ] Puedo explicar por qué useQuery vs useEffect
-- [ ] Sé defender la estructura de componentes
-- [ ] Puedo responder preguntas técnicas comunes
-
-## **🚀 ESTRATEGIA DURANTE LA PRUEBA**
-
-1. **Minuto 0-15:** Setup del proyecto y dependencias
-2. **Minuto 15-45:** Layout principal con TanStack Query
-3. **Minuto 45-90:** Pantalla principal funcional
-4. **Minuto 90-105:** Testing y mejoras
-5. **Minuto 105-120:** Preparar defensa y preguntas
-
-**¡Tú puedes! Esta estructura es moderna y profesional - demuestra que estás actualizado.**
-
-
-# **🎯 TIPOS DE APIs Y CÓMO CONSUMIRLAS EN REACT NATIVE**
-
-## **📊 TIPOS DE APIs QUE PUEDEN PEDIRTE**
-
-### **1. API REST Básica (JSON) - MÁS COMÚN**
-```javascript
-// Ejemplo: JSONPlaceholder, FakeStoreAPI
-const fetchProducts = async () => {
-  const response = await fetch('https://fakestoreapi.com/products');
-  return response.json();
-};
-```
-
-### **2. API con Autenticación**
-```javascript
-// Headers con API Key o Token
-const fetchWithAuth = async () => {
-  const response = await fetch('https://api.spotify-like.com/data', {
-    headers: {
-      'Authorization': 'Bearer tu-token-aqui',
-      'Content-Type': 'application/json'
-    }
-  });
-  return response.json();
-};
-```
-
-### **3. API con Parámetros (Query Strings)**
-```javascript
-// Búsqueda, filtros, paginación
-const fetchSearch = async (searchTerm) => {
-  const response = await fetch(
-    `https://api.ejemplo.com/products?search=${searchTerm}&limit=10`
-  );
-  return response.json();
-};
-```
-
-### **4. API con Paginación**
-```javascript
-// Parámetros de página y límite
-const fetchPaginated = async (page = 1) => {
-  const response = await fetch(
-    `https://api.ejemplo.com/products?page=${page}&limit=20`
-  );
-  return response.json();
-};
-```
-
----
-
-## **🔥 APIs POPULARES PARA PRUEBAS TÉCNICAS**
-
-### **1. FakeStore API (Productos)**
-```javascript
-const fetchProducts = async () => {
-  const response = await fetch('https://fakestoreapi.com/products');
-  if (!response.ok) throw new Error('Error fetching products');
-  return response.json();
-};
-
-// Estructura de datos esperada:
-/*
-{
-  id: 1,
-  title: "Product Name",
-  price: 109.95,
-  description: "Product description",
-  category: "men's clothing",
-  image: "https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg",
-  rating: { rate: 3.9, count: 120 }
-}
-*/
-```
-
-### **2. JSONPlaceholder (Posts/Usuarios)**
-```javascript
-const fetchPosts = async () => {
-  const response = await fetch('https://jsonplaceholder.typicode.com/posts');
-  if (!response.ok) throw new Error('Error fetching posts');
-  return response.json();
-};
-```
-
-### **3. Deezer API (Tipo Spotify)**
-```javascript
-// Necesita APP ID y Secret Key (probablemente te lo den)
-const fetchTracks = async () => {
-  const response = await fetch('https://api.deezer.com/chart/0/tracks');
-  if (!response.ok) throw new Error('Error fetching tracks');
-  return response.json();
-};
-
-// Estructura esperada:
-/*
-{
-  data: [
-    {
-      id: 123456,
-      title: "Song Name",
-      artist: { name: "Artist Name" },
-      album: { title: "Album Name", cover_medium: "url" },
-      duration: 240,
-      preview: "audio-url"
-    }
-  ]
-}
-*/
-```
-
-### **4. TheMovieDB (Películas)**
-```javascript
-const fetchMovies = async () => {
-  const response = await fetch('https://api.themoviedb.org/3/movie/popular?api_key=TU_API_KEY');
-  if (!response.ok) throw new Error('Error fetching movies');
-  return response.json();
-};
-```
-
----
-
-## **🔄 PLANTILLA UNIVERSAL PARA CUALQUIER API**
-
-### **Estructura Base que Funciona para TODAS:**
-```typescript
-// 🎯 PLANTILLA REUTILIZABLE - Adaptable a cualquier API
-import React, { useState } from 'react';
-import { View, Text, FlatList, Image, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
 
-// 1. FUNCIÓN DE FETCH GENÉRICA
-const fetchData = async (url: string) => {
-  console.log(`📡 Fetching: ${url}`);
-  const response = await fetch(url);
+const getTopSongs = async () => {
+  const apiKey = 'ac66e02c5316a0244f53b2cc88d16c3c';
+  const response = await fetch(
+    `http://ws.audioscrobbler.com/2.0/?method=chart.gettoptracks&api_key=${apiKey}&format=json&limit=15`
+  );
   
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
+  if (!response.ok) throw new Error('Error loading songs');
   
   const data = await response.json();
-  console.log(`✅ Received ${data.length || data.data?.length} items`);
-  return data;
+  return data.tracks.track;
 };
 
-// 2. COMPONENTE PRINCIPAL ADAPTABLE
-export default function DataScreen() {
-  const [search, setSearch] = useState('');
-  
-  // 🎯 CONFIGURACIÓN FLEXIBLE - Cambia solo la URL y queryKey
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['api-data'], // 🔑 Cambiar según la API
-    queryFn: () => fetchData('https://fakestoreapi.com/products'), // 🔗 Cambiar URL
+export default function HomeScreen() {
+  const router = useRouter();
+
+  const { data: songs, isLoading, error } = useQuery({
+    queryKey: ['songs'],
+    queryFn: getTopSongs,
   });
 
-  // 🎯 LÓGICA DE DATOS ADAPTABLE
-  const items = data || [];
-  const filteredItems = items.filter(item =>
-    // 🔍 Búsqueda adaptable - cambia según los campos de la API
-    item.title?.toLowerCase().includes(search.toLowerCase()) ||
-    item.name?.toLowerCase().includes(search.toLowerCase())
-  );
+  const goToSongDetail = (song: any) => {
+    router.push({
+      pathname: '/song-detail',
+      params: { 
+        songName: song.name,
+        artist: song.artist.name,
+        listeners: song.listeners
+      }
+    });
+  };
 
-  // 🎯 RENDER ADAPTABLE - Cambia según la estructura de datos
-  const renderItem = ({ item }: { item: any }) => (
-    <View style={styles.card}>
-      {/* 🖼️ Imagen si existe */}
-      {item.image && (
-        <Image source={{ uri: item.image }} style={styles.image} />
-      )}
-      
-      {/* 📝 Título/Name - campo variable */}
-      <Text style={styles.title}>
-        {item.title || item.name || 'Sin título'}
-      </Text>
-      
-      {/* 💰 Precio si existe */}
-      {item.price && (
-        <Text style={styles.price}>${item.price}</Text>
-      )}
-      
-      {/* 🎵 Artista si existe (para APIs de música) */}
-      {item.artist && (
-        <Text style={styles.artist}>{item.artist.name}</Text>
-      )}
-      
-      {/* 📝 Descripción si existe */}
-      {item.description && (
-        <Text style={styles.description} numberOfLines={2}>
-          {item.description}
-        </Text>
-      )}
+  if (isLoading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+        <Text>Loading songs...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text>Error loading songs</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Canciones Populares</Text>
+
+      <FlatList
+        data={songs}
+        keyExtractor={(item) => item.url}
+        renderItem={({ item, index }) => (
+          <TouchableOpacity 
+            style={styles.songItem}
+            onPress={() => goToSongDetail(item)}
+          >
+            <Text style={styles.rank}>#{index + 1}</Text>
+            <View style={styles.songInfo}>
+              <Text style={styles.songName}>{item.name}</Text>
+              <Text style={styles.artist}>{item.artist.name}</Text>
+            </View>
+            <Text style={styles.listeners}>{item.listeners}</Text>
+          </TouchableOpacity>
+        )}
+      />
     </View>
   );
-
-  // ✅ El resto del componente ES EL MISMO para todas las APIs
-  // (loading states, error handling, FlatList, etc.)
 }
-```
 
----
-
-## **🎯 ADAPTACIÓN RÁPIDA POR TIPO DE API**
-
-### **Para FakeStore API (Productos):**
-```typescript
-const { data, isLoading, error } = useQuery({
-  queryKey: ['products'],
-  queryFn: () => fetchData('https://fakestoreapi.com/products'),
-});
-
-// En renderItem:
-<View style={styles.card}>
-  <Image source={{ uri: item.image }} style={styles.image} />
-  <Text style={styles.title}>{item.title}</Text>
-  <Text style={styles.price}>${item.price}</Text>
-  <Text style={styles.category}>{item.category}</Text>
-</View>
-```
-
-### **Para API de Música (Deezer/Spotify-like):**
-```typescript
-const { data, isLoading, error } = useQuery({
-  queryKey: ['tracks'],
-  queryFn: () => fetchData('https://api.deezer.com/chart/0/tracks'),
-});
-
-// 🎯 NOTA: Deezer devuelve { data: [...] } - necesitamos data.data
-const tracks = data?.data || [];
-
-// En renderItem:
-<View style={styles.card}>
-  <Image source={{ uri: item.album.cover_medium }} style={styles.image} />
-  <Text style={styles.title}>{item.title}</Text>
-  <Text style={styles.artist}>{item.artist.name}</Text>
-  <Text style={styles.duration}>{Math.floor(item.duration / 60)}:{(item.duration % 60).toString().padStart(2, '0')}</Text>
-</View>
-```
-
-### **Para JSONPlaceholder (Posts):**
-```typescript
-const { data, isLoading, error } = useQuery({
-  queryKey: ['posts'],
-  queryFn: () => fetchData('https://jsonplaceholder.typicode.com/posts'),
-});
-
-// En renderItem:
-<View style={styles.card}>
-  <Text style={styles.title}>{item.title}</Text>
-  <Text style={styles.body}>{item.body}</Text>
-  <Text style={styles.userId}>User: {item.userId}</Text>
-</View>
-```
-
----
-
-## **🎨 ESTILOS UNIVERSALES**
-
-```typescript
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#f5f5f5'
-  },
-  card: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
-  },
-  image: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 12
+    backgroundColor: '#fff'
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333'
+    marginBottom: 16,
+    textAlign: 'center'
   },
-  price: {
-    fontSize: 16,
+  songItem: {
+    flexDirection: 'row',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    alignItems: 'center'
+  },
+  rank: {
+    fontWeight: 'bold',
+    marginRight: 12,
+    color: 'green',
+    width: 30
+  },
+  songInfo: {
+    flex: 1
+  },
+  songName: {
     fontWeight: '600',
-    color: '#007AFF',
-    marginBottom: 4
+    fontSize: 16
   },
   artist: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4
+    color: 'gray',
+    fontSize: 14
   },
-  category: {
-    fontSize: 12,
-    color: '#888',
-    fontStyle: 'italic'
+  listeners: {
+    color: 'gray',
+    fontSize: 12
   },
-  description: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   }
 });
 ```
 
----
+4. Pantalla Detalle de Canción
 
-## **🚀 ESTRATEGIA PARA LA PRUEBA**
+📍 `app/song-detail.tsx`
 
-### **Paso 1: Identificar la API**
-```javascript
-// Pregunta: "¿Pueden darme la URL de la API y un ejemplo de la respuesta?"
-```
-
-### **Paso 2: Analizar la Estructura de Datos**
-```javascript
-// Mira los campos principales:
-// - ¿Tiene `title` o `name`?
-// - ¿Tiene `image` o `cover`?
-// - ¿Tiene `price` o `duration`?
-// - ¿Tiene anidamientos como `artist.name`?
-```
-
-### **Paso 3: Adaptar la Plantilla**
 ```typescript
-// Solo cambia:
-// 1. La URL en useQuery
-// 2. Los campos en renderItem
-// 3. queryKey apropiado
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export default function SongDetailScreen() {
+  const params = useLocalSearchParams();
+  const router = useRouter();
+  
+  const songName = params.songName as string;
+  const artist = params.artist as string;
+  const listeners = params.listeners as string;
+  
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    checkFavorite();
+  }, [artist]);
+
+  const checkFavorite = async () => {
+    try {
+      const favorites = await AsyncStorage.getItem('favorite_artists');
+      const favoriteList = favorites ? JSON.parse(favorites) : [];
+      setIsFavorite(favoriteList.includes(artist));
+    } catch (error) {
+      console.log('Error checking favorites');
+    }
+  };
+
+  const toggleFavorite = async () => {
+    try {
+      const favorites = await AsyncStorage.getItem('favorite_artists');
+      let favoriteList = favorites ? JSON.parse(favorites) : [];
+      
+      if (isFavorite) {
+        favoriteList = favoriteList.filter((art: string) => art !== artist);
+      } else {
+        favoriteList.push(artist);
+      }
+      
+      await AsyncStorage.setItem('favorite_artists', JSON.stringify(favoriteList));
+      setIsFavorite(!isFavorite);
+    } catch (error) {
+      console.log('Error saving favorite');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.songTitle}>{songName}</Text>
+      <Text style={styles.artist}>por {artist}</Text>
+      
+      <View style={styles.infoBox}>
+        <Text style={styles.infoText}>Oyentes: {listeners}</Text>
+      </View>
+
+      <TouchableOpacity 
+        style={[styles.favoriteButton, isFavorite && styles.favoriteActive]}
+        onPress={toggleFavorite}
+      >
+        <Text style={styles.favoriteText}>
+          {isFavorite ? '★ En Favoritos' : '☆ Agregar a Favoritos'}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => router.back()}
+      >
+        <Text style={styles.backText}>Volver</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  songTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8
+  },
+  artist: {
+    fontSize: 20,
+    color: 'gray',
+    marginBottom: 30,
+    textAlign: 'center'
+  },
+  infoBox: {
+    backgroundColor: '#f0f0f0',
+    padding: 20,
+    borderRadius: 10,
+    marginBottom: 30,
+    width: '80%',
+    alignItems: 'center'
+  },
+  infoText: {
+    fontSize: 18,
+    fontWeight: '600'
+  },
+  favoriteButton: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    width: '80%',
+    alignItems: 'center'
+  },
+  favoriteActive: {
+    backgroundColor: '#FF9800'
+  },
+  favoriteText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold'
+  },
+  backButton: {
+    padding: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    width: '60%',
+    alignItems: 'center'
+  },
+  backText: {
+    fontSize: 16,
+    color: '#666'
+  }
+});
 ```
 
-### **Paso 4: Probar con Console.log**
+5. Pantalla Perfil (Favoritos)
+
+📍 `app/(tabs)/profile.tsx`
+
 ```typescript
-// Siempre haz:
-console.log('API Response:', data);
-// Para ver la estructura real
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+
+export default function ProfileScreen() {
+  const [favoriteArtists, setFavoriteArtists] = useState<string[]>([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  const loadFavorites = async () => {
+    try {
+      const favorites = await AsyncStorage.getItem('favorite_artists');
+      if (favorites) {
+        setFavoriteArtists(JSON.parse(favorites));
+      }
+    } catch (error) {
+      console.log('Error loading favorites');
+    }
+  };
+
+  const removeFavorite = async (artistName: string) => {
+    try {
+      const updatedFavorites = favoriteArtists.filter(artist => artist !== artistName);
+      setFavoriteArtists(updatedFavorites);
+      await AsyncStorage.setItem('favorite_artists', JSON.stringify(updatedFavorites));
+    } catch (error) {
+      console.log('Error removing favorite');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Mis Artistas Favoritos</Text>
+      
+      {favoriteArtists.length === 0 ? (
+        <View style={styles.empty}>
+          <Text>No tienes artistas favoritos</Text>
+          <Text>Agrega artistas desde el detalle de una canción</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={favoriteArtists}
+          keyExtractor={(item) => item}
+          renderItem={({ item }) => (
+            <View style={styles.artistItem}>
+              <Text style={styles.artistName}>{item}</Text>
+              <TouchableOpacity 
+                style={styles.removeButton}
+                onPress={() => removeFavorite(item)}
+              >
+                <Text style={styles.removeText}>Eliminar</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        />
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#fff'
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center'
+  },
+  empty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  artistItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee'
+  },
+  artistName: {
+    fontSize: 16,
+    fontWeight: '500'
+  },
+  removeButton: {
+    backgroundColor: '#ff4444',
+    padding: 8,
+    borderRadius: 4
+  },
+  removeText: {
+    color: 'white',
+    fontSize: 12
+  }
+});
 ```
 
----
+Flujo corregido:
 
-## **📋 CHECKLIST PARA CUALQUIER API**
+1. Home → Lista de canciones populares
+2. Tocar canción → Va a detalle de esa canción (pantalla grande)
+3. En detalle → Puedes agregar el artista a favoritos
+4. Perfil → Muestra artistas favoritos guardados
 
-### **✅ Para Productos:**
-- [ ] `item.title` - nombre del producto
-- [ ] `item.price` - precio
-- [ ] `item.image` - imagen
-- [ ] `item.category` - categoría
-
-### **✅ Para Música:**
-- [ ] `item.title` - nombre de la canción
-- [ ] `item.artist.name` - artista
-- [ ] `item.album.cover_medium` - imagen del álbum
-- [ ] `item.duration` - duración
-
-### **✅ Para Posts:**
-- [ ] `item.title` - título
-- [ ] `item.body` - contenido
-- [ ] `item.userId` - autor
-
----
-
-## **🎯 RESUMEN**
-
-**La lógica NO cambia mucho - solo se adapta:**
-
-1. **Misma estructura de useQuery**
-2. **Mismo manejo de loading/error**
-3. **Mismo FlatList**
-4. **Solo cambia:** URL, campos mostrados, estilos específicos
-
-**¡Practica con 2-3 APIs diferentes y estarás preparado para cualquier cosa!**
-
-**¿Quieres que practiquemos con una API específica?** Dame el nombre o URL y hacemos un ejercicio completo.
-
+Simple y creíble para 2 horas 🎵
