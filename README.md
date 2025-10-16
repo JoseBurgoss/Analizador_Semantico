@@ -996,3 +996,192 @@ const styles = StyleSheet.create({
     color: '#666'
   }
 });
+
+
+
+🎵 detalle.tsx - Completo
+
+```typescript
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useQuery } from '@tanstack/react-query';
+
+const getArtistImage = async (artistName: string) => {
+  const apiKey = 'ac66e02c5316a0244f53b2cc88d16c3c';
+  const response = await fetch(
+    `http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=${encodeURIComponent(artistName)}&api_key=${apiKey}&format=json`
+  );
+  
+  if (!response.ok) throw new Error('Error loading artist image');
+  
+  const data = await response.json();
+  return data.artist.image[3]?.['#text'];
+};
+
+export default function SongDetailScreen() {
+  const params = useLocalSearchParams();
+  const router = useRouter();
+  
+  const songName = params.songName as string;
+  const artist = params.artist as string;
+  const listeners = params.listeners as string;
+  
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  const { data: artistImage, isLoading: imageLoading } = useQuery({
+    queryKey: ['artist-image', artist],
+    queryFn: () => getArtistImage(artist),
+  });
+
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  const loadFavorites = async () => {
+    try {
+      const favorites = await AsyncStorage.getItem('favorite_artists');
+      const favoriteList = favorites ? JSON.parse(favorites) : [];
+      setIsFavorite(favoriteList.includes(artist));
+    } catch (error) {
+      console.log('Error loading favorites');
+    }
+  };
+
+  const toggleFavorite = async () => {
+    try {
+      const favorites = await AsyncStorage.getItem('favorite_artists');
+      let favoriteList = favorites ? JSON.parse(favorites) : [];
+      
+      if (isFavorite) {
+        favoriteList = favoriteList.filter((art: string) => art !== artist);
+      } else {
+        favoriteList.push(artist);
+      }
+      
+      await AsyncStorage.setItem('favorite_artists', JSON.stringify(favoriteList));
+      setIsFavorite(!isFavorite);
+    } catch (error) {
+      console.log('Error saving favorite');
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {imageLoading ? (
+        <ActivityIndicator size="large" color="#1DB954" />
+      ) : artistImage ? (
+        <Image 
+          source={{ uri: artistImage }} 
+          style={styles.artistImage}
+        />
+      ) : (
+        <View style={styles.placeholderImage}>
+          <Text>🎤</Text>
+        </View>
+      )}
+      
+      <Text style={styles.songTitle}>{songName}</Text>
+      <Text style={styles.artist}>por {artist}</Text>
+      
+      <View style={styles.infoBox}>
+        <Text style={styles.infoText}>Oyentes: {listeners}</Text>
+      </View>
+
+      <TouchableOpacity 
+        style={[styles.favoriteButton, isFavorite && styles.favoriteActive]}
+        onPress={toggleFavorite}
+      >
+        <Text style={styles.favoriteText}>
+          {isFavorite ? '★ En Favoritos' : '☆ Agregar a Favoritos'}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity 
+        style={styles.backButton}
+        onPress={() => router.back()}
+      >
+        <Text style={styles.backText}>Volver</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  artistImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    marginBottom: 20
+  },
+  placeholderImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    marginBottom: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  songTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8
+  },
+  artist: {
+    fontSize: 20,
+    color: 'gray',
+    marginBottom: 30,
+    textAlign: 'center'
+  },
+  infoBox: {
+    backgroundColor: '#f0f0f0',
+    padding: 20,
+    borderRadius: 10,
+    marginBottom: 30,
+    width: '80%',
+    alignItems: 'center'
+  },
+  infoText: {
+    fontSize: 18,
+    fontWeight: '600'
+  },
+  favoriteButton: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+    width: '80%',
+    alignItems: 'center'
+  },
+  favoriteActive: {
+    backgroundColor: '#FF9800'
+  },
+  favoriteText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold'
+  },
+  backButton: {
+    padding: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    width: '60%',
+    alignItems: 'center'
+  },
+  backText: {
+    fontSize: 16,
+    color: '#666'
+  }
+});
+```
