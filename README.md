@@ -612,3 +612,384 @@ npm start
 
 **¡Tú puedes! Esta estructura es moderna y profesional - demuestra que estás actualizado.**
 
+
+# **🎯 TIPOS DE APIs Y CÓMO CONSUMIRLAS EN REACT NATIVE**
+
+## **📊 TIPOS DE APIs QUE PUEDEN PEDIRTE**
+
+### **1. API REST Básica (JSON) - MÁS COMÚN**
+```javascript
+// Ejemplo: JSONPlaceholder, FakeStoreAPI
+const fetchProducts = async () => {
+  const response = await fetch('https://fakestoreapi.com/products');
+  return response.json();
+};
+```
+
+### **2. API con Autenticación**
+```javascript
+// Headers con API Key o Token
+const fetchWithAuth = async () => {
+  const response = await fetch('https://api.spotify-like.com/data', {
+    headers: {
+      'Authorization': 'Bearer tu-token-aqui',
+      'Content-Type': 'application/json'
+    }
+  });
+  return response.json();
+};
+```
+
+### **3. API con Parámetros (Query Strings)**
+```javascript
+// Búsqueda, filtros, paginación
+const fetchSearch = async (searchTerm) => {
+  const response = await fetch(
+    `https://api.ejemplo.com/products?search=${searchTerm}&limit=10`
+  );
+  return response.json();
+};
+```
+
+### **4. API con Paginación**
+```javascript
+// Parámetros de página y límite
+const fetchPaginated = async (page = 1) => {
+  const response = await fetch(
+    `https://api.ejemplo.com/products?page=${page}&limit=20`
+  );
+  return response.json();
+};
+```
+
+---
+
+## **🔥 APIs POPULARES PARA PRUEBAS TÉCNICAS**
+
+### **1. FakeStore API (Productos)**
+```javascript
+const fetchProducts = async () => {
+  const response = await fetch('https://fakestoreapi.com/products');
+  if (!response.ok) throw new Error('Error fetching products');
+  return response.json();
+};
+
+// Estructura de datos esperada:
+/*
+{
+  id: 1,
+  title: "Product Name",
+  price: 109.95,
+  description: "Product description",
+  category: "men's clothing",
+  image: "https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg",
+  rating: { rate: 3.9, count: 120 }
+}
+*/
+```
+
+### **2. JSONPlaceholder (Posts/Usuarios)**
+```javascript
+const fetchPosts = async () => {
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+  if (!response.ok) throw new Error('Error fetching posts');
+  return response.json();
+};
+```
+
+### **3. Deezer API (Tipo Spotify)**
+```javascript
+// Necesita APP ID y Secret Key (probablemente te lo den)
+const fetchTracks = async () => {
+  const response = await fetch('https://api.deezer.com/chart/0/tracks');
+  if (!response.ok) throw new Error('Error fetching tracks');
+  return response.json();
+};
+
+// Estructura esperada:
+/*
+{
+  data: [
+    {
+      id: 123456,
+      title: "Song Name",
+      artist: { name: "Artist Name" },
+      album: { title: "Album Name", cover_medium: "url" },
+      duration: 240,
+      preview: "audio-url"
+    }
+  ]
+}
+*/
+```
+
+### **4. TheMovieDB (Películas)**
+```javascript
+const fetchMovies = async () => {
+  const response = await fetch('https://api.themoviedb.org/3/movie/popular?api_key=TU_API_KEY');
+  if (!response.ok) throw new Error('Error fetching movies');
+  return response.json();
+};
+```
+
+---
+
+## **🔄 PLANTILLA UNIVERSAL PARA CUALQUIER API**
+
+### **Estructura Base que Funciona para TODAS:**
+```typescript
+// 🎯 PLANTILLA REUTILIZABLE - Adaptable a cualquier API
+import React, { useState } from 'react';
+import { View, Text, FlatList, Image, StyleSheet } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+
+// 1. FUNCIÓN DE FETCH GENÉRICA
+const fetchData = async (url: string) => {
+  console.log(`📡 Fetching: ${url}`);
+  const response = await fetch(url);
+  
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  
+  const data = await response.json();
+  console.log(`✅ Received ${data.length || data.data?.length} items`);
+  return data;
+};
+
+// 2. COMPONENTE PRINCIPAL ADAPTABLE
+export default function DataScreen() {
+  const [search, setSearch] = useState('');
+  
+  // 🎯 CONFIGURACIÓN FLEXIBLE - Cambia solo la URL y queryKey
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['api-data'], // 🔑 Cambiar según la API
+    queryFn: () => fetchData('https://fakestoreapi.com/products'), // 🔗 Cambiar URL
+  });
+
+  // 🎯 LÓGICA DE DATOS ADAPTABLE
+  const items = data || [];
+  const filteredItems = items.filter(item =>
+    // 🔍 Búsqueda adaptable - cambia según los campos de la API
+    item.title?.toLowerCase().includes(search.toLowerCase()) ||
+    item.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // 🎯 RENDER ADAPTABLE - Cambia según la estructura de datos
+  const renderItem = ({ item }: { item: any }) => (
+    <View style={styles.card}>
+      {/* 🖼️ Imagen si existe */}
+      {item.image && (
+        <Image source={{ uri: item.image }} style={styles.image} />
+      )}
+      
+      {/* 📝 Título/Name - campo variable */}
+      <Text style={styles.title}>
+        {item.title || item.name || 'Sin título'}
+      </Text>
+      
+      {/* 💰 Precio si existe */}
+      {item.price && (
+        <Text style={styles.price}>${item.price}</Text>
+      )}
+      
+      {/* 🎵 Artista si existe (para APIs de música) */}
+      {item.artist && (
+        <Text style={styles.artist}>{item.artist.name}</Text>
+      )}
+      
+      {/* 📝 Descripción si existe */}
+      {item.description && (
+        <Text style={styles.description} numberOfLines={2}>
+          {item.description}
+        </Text>
+      )}
+    </View>
+  );
+
+  // ✅ El resto del componente ES EL MISMO para todas las APIs
+  // (loading states, error handling, FlatList, etc.)
+}
+```
+
+---
+
+## **🎯 ADAPTACIÓN RÁPIDA POR TIPO DE API**
+
+### **Para FakeStore API (Productos):**
+```typescript
+const { data, isLoading, error } = useQuery({
+  queryKey: ['products'],
+  queryFn: () => fetchData('https://fakestoreapi.com/products'),
+});
+
+// En renderItem:
+<View style={styles.card}>
+  <Image source={{ uri: item.image }} style={styles.image} />
+  <Text style={styles.title}>{item.title}</Text>
+  <Text style={styles.price}>${item.price}</Text>
+  <Text style={styles.category}>{item.category}</Text>
+</View>
+```
+
+### **Para API de Música (Deezer/Spotify-like):**
+```typescript
+const { data, isLoading, error } = useQuery({
+  queryKey: ['tracks'],
+  queryFn: () => fetchData('https://api.deezer.com/chart/0/tracks'),
+});
+
+// 🎯 NOTA: Deezer devuelve { data: [...] } - necesitamos data.data
+const tracks = data?.data || [];
+
+// En renderItem:
+<View style={styles.card}>
+  <Image source={{ uri: item.album.cover_medium }} style={styles.image} />
+  <Text style={styles.title}>{item.title}</Text>
+  <Text style={styles.artist}>{item.artist.name}</Text>
+  <Text style={styles.duration}>{Math.floor(item.duration / 60)}:{(item.duration % 60).toString().padStart(2, '0')}</Text>
+</View>
+```
+
+### **Para JSONPlaceholder (Posts):**
+```typescript
+const { data, isLoading, error } = useQuery({
+  queryKey: ['posts'],
+  queryFn: () => fetchData('https://jsonplaceholder.typicode.com/posts'),
+});
+
+// En renderItem:
+<View style={styles.card}>
+  <Text style={styles.title}>{item.title}</Text>
+  <Text style={styles.body}>{item.body}</Text>
+  <Text style={styles.userId}>User: {item.userId}</Text>
+</View>
+```
+
+---
+
+## **🎨 ESTILOS UNIVERSALES**
+
+```typescript
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f5f5f5'
+  },
+  card: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  image: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 12
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333'
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#007AFF',
+    marginBottom: 4
+  },
+  artist: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4
+  },
+  category: {
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic'
+  },
+  description: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20
+  }
+});
+```
+
+---
+
+## **🚀 ESTRATEGIA PARA LA PRUEBA**
+
+### **Paso 1: Identificar la API**
+```javascript
+// Pregunta: "¿Pueden darme la URL de la API y un ejemplo de la respuesta?"
+```
+
+### **Paso 2: Analizar la Estructura de Datos**
+```javascript
+// Mira los campos principales:
+// - ¿Tiene `title` o `name`?
+// - ¿Tiene `image` o `cover`?
+// - ¿Tiene `price` o `duration`?
+// - ¿Tiene anidamientos como `artist.name`?
+```
+
+### **Paso 3: Adaptar la Plantilla**
+```typescript
+// Solo cambia:
+// 1. La URL en useQuery
+// 2. Los campos en renderItem
+// 3. queryKey apropiado
+```
+
+### **Paso 4: Probar con Console.log**
+```typescript
+// Siempre haz:
+console.log('API Response:', data);
+// Para ver la estructura real
+```
+
+---
+
+## **📋 CHECKLIST PARA CUALQUIER API**
+
+### **✅ Para Productos:**
+- [ ] `item.title` - nombre del producto
+- [ ] `item.price` - precio
+- [ ] `item.image` - imagen
+- [ ] `item.category` - categoría
+
+### **✅ Para Música:**
+- [ ] `item.title` - nombre de la canción
+- [ ] `item.artist.name` - artista
+- [ ] `item.album.cover_medium` - imagen del álbum
+- [ ] `item.duration` - duración
+
+### **✅ Para Posts:**
+- [ ] `item.title` - título
+- [ ] `item.body` - contenido
+- [ ] `item.userId` - autor
+
+---
+
+## **🎯 RESUMEN**
+
+**La lógica NO cambia mucho - solo se adapta:**
+
+1. **Misma estructura de useQuery**
+2. **Mismo manejo de loading/error**
+3. **Mismo FlatList**
+4. **Solo cambia:** URL, campos mostrados, estilos específicos
+
+**¡Practica con 2-3 APIs diferentes y estarás preparado para cualquier cosa!**
+
+**¿Quieres que practiquemos con una API específica?** Dame el nombre o URL y hacemos un ejercicio completo.
+
