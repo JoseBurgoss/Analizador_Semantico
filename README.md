@@ -181,136 +181,176 @@ The analyzer can detect various errors, including:
 This analyzer serves as a robust tool for validating Pascal code before compilation, helping developers identify and fix errors early in the development process.
 
 
-🎵 APP DE MÚSICA - Versión Corregida
+# **🗺️ PLAN DETALLADO - App de Mapas Maracaibo**
 
-1. Layout Principal (igual)
+## **📋 PLAN 1: ESTRUCTURA BÁSICA (Sin funcionalidad)**
+*Para mostrar la estructura de la app sin implementar features*
 
-📍 `app/_layout.tsx`
+### **HORA 1-2: ESTRUCTURA Y NAVEGACIÓN**
 
-```typescript
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
-
-const queryClient = new QueryClient();
-
-export default function RootLayout() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-    </QueryClientProvider>
-  );
-}
+#### **1. Configuración inicial (30 min)**
+```bash
+npx create-expo-app mapa-maracaibo
+cd mapa-maracaibo
 ```
 
-2. Configurar Tabs
-
-📍 `app/(tabs)/_layout.tsx`
-
-```typescript
-import { Tabs } from 'expo-router';
-import { FontAwesome } from '@expo/vector-icons';
-
-export default function TabLayout() {
-  return (
-    <Tabs screenOptions={{ tabBarActiveTintColor: 'green' }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Inicio',
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="home" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Mi Perfil',
-          tabBarIcon: ({ color }) => <FontAwesome size={28} name="user" color={color} />,
-        }}
-      />
-    </Tabs>
-  );
-}
+#### **2. Estructura de archivos básica (1.5 horas)**
+```
+app/
+├── _layout.tsx
+└── (tabs)/
+    ├── _layout.tsx
+    ├── index.tsx      # Pantalla de inicio
+    ├── mapa.tsx       # Mapa básico
+    ├── lugares.tsx    # Lista básica
+    └── perfil.tsx     # Perfil básico
 ```
 
-3. Pantalla Home - Canciones Populares
+### **HORA 2-3: PANTALLAS BÁSICAS**
 
-📍 `app/(tabs)/index.tsx`
-
+#### **3. Pantalla de Inicio** (`app/(tabs)/index.tsx`)
 ```typescript
 import React from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet } from 'react-native';
 
-const getTopSongs = async () => {
-  const apiKey = 'ac66e02c5316a0244f53b2cc88d16c3c';
-  const response = await fetch(
-    `http://ws.audioscrobbler.com/2.0/?method=chart.gettoptracks&api_key=${apiKey}&format=json&limit=15`
+export default function InicioScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Mapa Maracaibo</Text>
+      <Text>Explora los lugares de Maracaibo, Venezuela</Text>
+    </View>
   );
-  
-  if (!response.ok) throw new Error('Error loading songs');
-  
-  const data = await response.json();
-  return data.tracks.track;
-};
+}
+```
 
-export default function HomeScreen() {
-  const router = useRouter();
+#### **4. Pantalla de Mapa** (`app/(tabs)/mapa.tsx`)
+```typescript
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
-  const { data: songs, isLoading, error } = useQuery({
-    queryKey: ['songs'],
-    queryFn: getTopSongs,
-  });
+export default function MapaScreen() {
+  return (
+    <View style={styles.container}>
+      <Text>Mapa de Maracaibo</Text>
+      <Text>Aquí irá el mapa interactivo</Text>
+    </View>
+  );
+}
+```
 
-  const goToSongDetail = (song: any) => {
-    router.push({
-      pathname: '/song-detail',
-      params: { 
-        songName: song.name,
-        artist: song.artist.name,
-        listeners: song.listeners
-      }
-    });
-  };
+#### **5. Pantalla de Lugares** (`app/(tabs)/lugares.tsx`)
+```typescript
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
-  if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-        <Text>Loading songs...</Text>
-      </View>
-    );
-  }
+export default function LugaresScreen() {
+  return (
+    <View style={styles.container}>
+      <Text>Lugares de Maracaibo</Text>
+      <Text>Lista de sitios importantes</Text>
+    </View>
+  );
+}
+```
 
-  if (error) {
-    return (
-      <View style={styles.center}>
-        <Text>Error loading songs</Text>
-      </View>
-    );
-  }
+#### **6. Pantalla de Perfil** (`app/(tabs)/perfil.tsx`)
+```typescript
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+export default function PerfilScreen() {
+  return (
+    <View style={styles.container}>
+      <Text>Mi Perfil</Text>
+      <Text>Configuración de la app</Text>
+    </View>
+  );
+}
+```
+
+Tienes razón. Aquí está el plan **realista para desarrollar en 2 horas**:
+
+## **🎯 PLAN EXPRESS - App Mapa Maracaibo**
+
+### **1. Mapa Básico Interactivo** (`app/(tabs)/mapa.tsx`)
+```typescript
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+
+export default function MapaScreen() {
+  const [lugarSeleccionado, setLugarSeleccionado] = useState<any>(null);
+
+  const lugares = [
+    { id: 1, nombre: "Basílica", tipo: "Religioso", coordenadas: "10.646, -71.613" },
+    { id: 2, nombre: "Teatro Baralt", tipo: "Cultural", coordenadas: "10.644, -71.611" },
+    { id: 3, nombre: "Vereda del Lago", tipo: "Parque", coordenadas: "10.639, -71.625" }
+  ];
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Canciones Populares</Text>
-
-      <FlatList
-        data={songs}
-        keyExtractor={(item) => item.url}
-        renderItem={({ item, index }) => (
-          <TouchableOpacity 
-            style={styles.songItem}
-            onPress={() => goToSongDetail(item)}
+      <Text style={styles.title}>Mapa de Maracaibo</Text>
+      
+      <View style={styles.mapa}>
+        <View style={styles.lago} />
+        <View style={styles.ciudad} />
+        
+        {lugares.map((lugar, index) => (
+          <TouchableOpacity
+            key={lugar.id}
+            style={[styles.marcador, { left: 50 + (index * 100), top: 150 }]}
+            onPress={() => setLugarSeleccionado(lugar)}
           >
-            <Text style={styles.rank}>#{index + 1}</Text>
-            <View style={styles.songInfo}>
-              <Text style={styles.songName}>{item.name}</Text>
-              <Text style={styles.artist}>{item.artist.name}</Text>
-            </View>
-            <Text style={styles.listeners}>{item.listeners}</Text>
+            <View style={styles.punto} />
           </TouchableOpacity>
+        ))}
+      </View>
+
+      {lugarSeleccionado && (
+        <View style={styles.info}>
+          <Text style={styles.nombre}>{lugarSeleccionado.nombre}</Text>
+          <Text>{lugarSeleccionado.tipo}</Text>
+          <Text>{lugarSeleccionado.coordenadas}</Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, padding: 20 },
+  title: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
+  mapa: { flex: 1, backgroundColor: '#e0f7fa', borderRadius: 10, marginBottom: 20 },
+  lago: { position: 'absolute', top: 50, left: 0, right: 0, height: 100, backgroundColor: '#81d4fa' },
+  ciudad: { position: 'absolute', top: 150, left: 40, right: 40, height: 200, backgroundColor: '#a5d6a7' },
+  marcador: { position: 'absolute' },
+  punto: { width: 20, height: 20, backgroundColor: 'red', borderRadius: 10 },
+  info: { backgroundColor: 'white', padding: 15, borderRadius: 8 }
+});
+```
+
+### **2. Lista Simple** (`app/(tabs)/lugares.tsx`)
+```typescript
+import React from 'react';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
+
+export default function LugaresScreen() {
+  const lugares = [
+    { id: 1, nombre: "Basílica de Chiquinquirá", tipo: "Religioso" },
+    { id: 2, nombre: "Teatro Baralt", tipo: "Cultural" },
+    { id: 3, nombre: "Parque Vereda del Lago", tipo: "Parque" }
+  ];
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Lugares de Maracaibo</Text>
+      <FlatList
+        data={lugares}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.item}>
+            <Text style={styles.nombre}>{item.nombre}</Text>
+            <Text style={styles.tipo}>{item.tipo}</Text>
+          </View>
         )}
       />
     </View>
@@ -318,870 +358,419 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#fff'
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center'
-  },
-  songItem: {
-    flexDirection: 'row',
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    alignItems: 'center'
-  },
-  rank: {
-    fontWeight: 'bold',
-    marginRight: 12,
-    color: 'green',
-    width: 30
-  },
-  songInfo: {
-    flex: 1
-  },
-  songName: {
-    fontWeight: '600',
-    fontSize: 16
-  },
-  artist: {
-    color: 'gray',
-    fontSize: 14
-  },
-  listeners: {
-    color: 'gray',
-    fontSize: 12
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  }
+  container: { flex: 1, padding: 20 },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
+  item: { backgroundColor: 'white', padding: 15, marginBottom: 10, borderRadius: 8 },
+  nombre: { fontWeight: 'bold' },
+  tipo: { color: 'gray' }
 });
 ```
 
-4. Pantalla Detalle de Canción
+### **3. Perfil Básico** (`app/(tabs)/perfil.tsx`)
+```typescript
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 
-📍 `app/song-detail.tsx`
+export default function PerfilScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Mi Perfil</Text>
+      <Text>App Mapa Maracaibo</Text>
+      <Text>Versión 1.0</Text>
+    </View>
+  );
+}
 
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 }
+});
+```
+
+### **4. Inicio Simple** (`app/(tabs)/index.tsx`)
+```typescript
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+export default function InicioScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Mapa Maracaibo</Text>
+      <Text>Explora los lugares de la ciudad</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 10 }
+});
+```
+
+## **✅ LO QUE OBTIENES EN 30 MINUTOS:**
+
+- **Mapa interactivo** con marcadores
+- **Lista de lugares** básica  
+- **Navegación** entre 4 pantallas
+- **Diseño funcional** y limpio
+- **Código simple** y entendible
+
+# **🗺️ PLAN FULLSTACK - React Native + Express + MySQL**
+
+## **📁 ESTRUCTURA COMPLETA**
+
+```
+proyecto/
+├── frontend/           # Tu app de React Native actual
+├── backend/            # Nuevo - Express API
+│   ├── package.json
+│   ├── server.js
+│   └── database.js
+└── README.md
+```
+
+## **🔧 BACKEND - Express API** (15 minutos)
+
+### **1. Crear carpeta backend**
+```bash
+mkdir backend
+cd backend
+```
+
+### **2. package.json** (`backend/package.json`)
+```json
+{
+  "name": "mapa-backend",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "mysql2": "^3.6.0",
+    "dotenv": "^16.3.1"
+  }
+}
+```
+
+### **3. Configuración BD** (`backend/database.js`)
+```javascript
+const mysql = require('mysql2');
+require('dotenv').config();
+
+const connection = mysql.createConnection({
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'mapa_maracaibo'
+});
+
+connection.connect((err) => {
+  if (err) {
+    console.error('Error conectando a MySQL:', err);
+    return;
+  }
+  console.log('Conectado a MySQL');
+  
+  // Crear tabla si no existe
+  const createTable = `
+    CREATE TABLE IF NOT EXISTS lugares (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      nombre VARCHAR(255) NOT NULL,
+      tipo VARCHAR(100),
+      descripcion TEXT,
+      latitud DECIMAL(10,8),
+      longitud DECIMAL(11,8),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+  
+  connection.query(createTable, (err) => {
+    if (err) console.error('Error creando tabla:', err);
+    else console.log('Tabla lugares lista');
+  });
+});
+
+module.exports = connection;
+```
+
+### **4. Servidor Express** (`backend/server.js`)
+```javascript
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
+const db = require('./database');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+// 1. GET - Obtener todos los lugares
+app.get('/api/lugares', (req, res) => {
+  db.query('SELECT * FROM lugares', (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(results);
+  });
+});
+
+// 2. GET - Obtener un lugar por ID
+app.get('/api/lugares/:id', (req, res) => {
+  const { id } = req.params;
+  db.query('SELECT * FROM lugares WHERE id = ?', [id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Lugar no encontrado' });
+    }
+    res.json(results[0]);
+  });
+});
+
+// 3. POST - Crear nuevo lugar
+app.post('/api/lugares', (req, res) => {
+  const { nombre, tipo, descripcion, latitud, longitud } = req.body;
+  
+  db.query(
+    'INSERT INTO lugares (nombre, tipo, descripcion, latitud, longitud) VALUES (?, ?, ?, ?, ?)',
+    [nombre, tipo, descripcion, latitud, longitud],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ id: results.insertId, nombre, tipo });
+    }
+  );
+});
+
+// 4. PUT - Actualizar lugar
+app.put('/api/lugares/:id', (req, res) => {
+  const { id } = req.params;
+  const { nombre, tipo, descripcion, latitud, longitud } = req.body;
+  
+  db.query(
+    'UPDATE lugares SET nombre=?, tipo=?, descripcion=?, latitud=?, longitud=? WHERE id=?',
+    [nombre, tipo, descripcion, latitud, longitud, id],
+    (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ message: 'Lugar actualizado' });
+    }
+  );
+});
+
+// 5. DELETE - Eliminar lugar
+app.delete('/api/lugares/:id', (req, res) => {
+  const { id } = req.params;
+  
+  db.query('DELETE FROM lugares WHERE id = ?', [id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.json({ message: 'Lugar eliminado' });
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+});
+```
+
+### **5. Variables entorno** (`backend/.env`)
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=tu_password
+DB_NAME=mapa_maracaibo
+PORT=3000
+```
+
+## **📱 FRONTEND - React Native Actualizado** (10 minutos)
+
+### **1. Mapa conectado a API** (`app/(tabs)/mapa.tsx`)
 ```typescript
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 
-export default function SongDetailScreen() {
-  const params = useLocalSearchParams();
-  const router = useRouter();
-  
-  const songName = params.songName as string;
-  const artist = params.artist as string;
-  const listeners = params.listeners as string;
-  
-  const [isFavorite, setIsFavorite] = useState(false);
+const API_URL = 'http://localhost:3000/api';
+
+export default function MapaScreen() {
+  const [lugares, setLugares] = useState<any[]>([]);
+  const [lugarSeleccionado, setLugarSeleccionado] = useState<any>(null);
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    checkFavorite();
-  }, [artist]);
+    cargarLugares();
+  }, []);
 
-  const checkFavorite = async () => {
+  const cargarLugares = async () => {
     try {
-      const favorites = await AsyncStorage.getItem('favorite_artists');
-      const favoriteList = favorites ? JSON.parse(favorites) : [];
-      setIsFavorite(favoriteList.includes(artist));
+      const response = await fetch(`${API_URL}/lugares`);
+      const data = await response.json();
+      setLugares(data);
     } catch (error) {
-      console.log('Error checking favorites');
+      console.error('Error cargando lugares:', error);
+    } finally {
+      setCargando(false);
     }
   };
 
-  const toggleFavorite = async () => {
-    try {
-      const favorites = await AsyncStorage.getItem('favorite_artists');
-      let favoriteList = favorites ? JSON.parse(favorites) : [];
-      
-      if (isFavorite) {
-        favoriteList = favoriteList.filter((art: string) => art !== artist);
-      } else {
-        favoriteList.push(artist);
-      }
-      
-      await AsyncStorage.setItem('favorite_artists', JSON.stringify(favoriteList));
-      setIsFavorite(!isFavorite);
-    } catch (error) {
-      console.log('Error saving favorite');
-    }
-  };
+  if (cargando) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+        <Text>Cargando lugares...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.songTitle}>{songName}</Text>
-      <Text style={styles.artist}>por {artist}</Text>
+      <Text style={styles.title}>Mapa de Maracaibo</Text>
       
-      <View style={styles.infoBox}>
-        <Text style={styles.infoText}>Oyentes: {listeners}</Text>
+      <View style={styles.mapa}>
+        <View style={styles.lago} />
+        <View style={styles.ciudad} />
+        
+        {lugares.map((lugar, index) => (
+          <TouchableOpacity
+            key={lugar.id}
+            style={[styles.marcador, { left: 50 + (index * 100), top: 150 }]}
+            onPress={() => setLugarSeleccionado(lugar)}
+          >
+            <View style={styles.punto} />
+          </TouchableOpacity>
+        ))}
       </View>
 
-      <TouchableOpacity 
-        style={[styles.favoriteButton, isFavorite && styles.favoriteActive]}
-        onPress={toggleFavorite}
-      >
-        <Text style={styles.favoriteText}>
-          {isFavorite ? '★ En Favoritos' : '☆ Agregar a Favoritos'}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
-        <Text style={styles.backText}>Volver</Text>
-      </TouchableOpacity>
+      {lugarSeleccionado && (
+        <View style={styles.info}>
+          <Text style={styles.nombre}>{lugarSeleccionado.nombre}</Text>
+          <Text>{lugarSeleccionado.tipo}</Text>
+          <Text>{lugarSeleccionado.descripcion}</Text>
+          <Text>Coordenadas: {lugarSeleccionado.latitud}, {lugarSeleccionado.longitud}</Text>
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  songTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8
-  },
-  artist: {
-    fontSize: 20,
-    color: 'gray',
-    marginBottom: 30,
-    textAlign: 'center'
-  },
-  infoBox: {
-    backgroundColor: '#f0f0f0',
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 30,
-    width: '80%',
-    alignItems: 'center'
-  },
-  infoText: {
-    fontSize: 18,
-    fontWeight: '600'
-  },
-  favoriteButton: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-    width: '80%',
-    alignItems: 'center'
-  },
-  favoriteActive: {
-    backgroundColor: '#FF9800'
-  },
-  favoriteText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold'
-  },
-  backButton: {
-    padding: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    width: '60%',
-    alignItems: 'center'
-  },
-  backText: {
-    fontSize: 16,
-    color: '#666'
-  }
+  container: { flex: 1, padding: 20 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
+  mapa: { flex: 1, backgroundColor: '#e0f7fa', borderRadius: 10, marginBottom: 20 },
+  lago: { position: 'absolute', top: 50, left: 0, right: 0, height: 100, backgroundColor: '#81d4fa' },
+  ciudad: { position: 'absolute', top: 150, left: 40, right: 40, height: 200, backgroundColor: '#a5d6a7' },
+  marcador: { position: 'absolute' },
+  punto: { width: 20, height: 20, backgroundColor: 'red', borderRadius: 10 },
+  info: { backgroundColor: 'white', padding: 15, borderRadius: 8 }
 });
 ```
 
-5. Pantalla Perfil (Favoritos)
-
-📍 `app/(tabs)/profile.tsx`
-
+### **2. Lista desde API** (`app/(tabs)/lugares.tsx`)
 ```typescript
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 
-export default function ProfileScreen() {
-  const [favoriteArtists, setFavoriteArtists] = useState<string[]>([]);
-  const router = useRouter();
+const API_URL = 'http://localhost:3000/api';
+
+export default function LugaresScreen() {
+  const [lugares, setLugares] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    loadFavorites();
+    cargarLugares();
   }, []);
 
-  const loadFavorites = async () => {
+  const cargarLugares = async () => {
     try {
-      const favorites = await AsyncStorage.getItem('favorite_artists');
-      if (favorites) {
-        setFavoriteArtists(JSON.parse(favorites));
-      }
+      const response = await fetch(`${API_URL}/lugares`);
+      const data = await response.json();
+      setLugares(data);
     } catch (error) {
-      console.log('Error loading favorites');
+      console.error('Error:', error);
+    } finally {
+      setCargando(false);
     }
   };
 
-  const removeFavorite = async (artistName: string) => {
-    try {
-      const updatedFavorites = favoriteArtists.filter(artist => artist !== artistName);
-      setFavoriteArtists(updatedFavorites);
-      await AsyncStorage.setItem('favorite_artists', JSON.stringify(updatedFavorites));
-    } catch (error) {
-      console.log('Error removing favorite');
-    }
-  };
+  if (cargando) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+        <Text>Cargando...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mis Artistas Favoritos</Text>
-      
-      {favoriteArtists.length === 0 ? (
-        <View style={styles.empty}>
-          <Text>No tienes artistas favoritos</Text>
-          <Text>Agrega artistas desde el detalle de una canción</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={favoriteArtists}
-          keyExtractor={(item) => item}
-          renderItem={({ item }) => (
-            <View style={styles.artistItem}>
-              <Text style={styles.artistName}>{item}</Text>
-              <TouchableOpacity 
-                style={styles.removeButton}
-                onPress={() => removeFavorite(item)}
-              >
-                <Text style={styles.removeText}>Eliminar</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        />
-      )}
+      <Text style={styles.title}>Lugares de Maracaibo ({lugares.length})</Text>
+      <FlatList
+        data={lugares}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.item}>
+            <Text style={styles.nombre}>{item.nombre}</Text>
+            <Text style={styles.tipo}>{item.tipo}</Text>
+            <Text style={styles.coordenadas}>
+              {item.latitud}, {item.longitud}
+            </Text>
+          </View>
+        )}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#fff'
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center'
-  },
-  empty: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  artistItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee'
-  },
-  artistName: {
-    fontSize: 16,
-    fontWeight: '500'
-  },
-  removeButton: {
-    backgroundColor: '#ff4444',
-    padding: 8,
-    borderRadius: 4
-  },
-  removeText: {
-    color: 'white',
-    fontSize: 12
-  }
+  container: { flex: 1, padding: 20 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
+  item: { backgroundColor: 'white', padding: 15, marginBottom: 10, borderRadius: 8 },
+  nombre: { fontWeight: 'bold', fontSize: 16 },
+  tipo: { color: 'gray', marginTop: 4 },
+  coordenadas: { fontSize: 12, color: '#666', marginTop: 2 }
 });
 ```
 
-Flujo corregido:
+## **🚀 COMANDOS PARA EJECUTAR**
 
-1. Home → Lista de canciones populares
-2. Tocar canción → Va a detalle de esa canción (pantalla grande)
-3. En detalle → Puedes agregar el artista a favoritos
-4. Perfil → Muestra artistas favoritos guardados
-
-Simple y creíble para 2 horas 🎵
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useQuery } from '@tanstack/react-query';
-
-// ✅ SEGUNDO ENDPOINT para obtener imagen del artista
-const getArtistImage = async (artistName: string) => {
-  const apiKey = 'ac66e02c5316a0244f53b2cc88d16c3c';
-  const response = await fetch(
-    `http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=${encodeURIComponent(artistName)}&api_key=${apiKey}&format=json`
-  );
-  
-  if (!response.ok) throw new Error('Error loading artist image');
-  
-  const data = await response.json();
-  return data.artist.image[3]?.['#text']; // ← Imagen extra large
-};
-
-export default function SongDetailScreen() {
-  const params = useLocalSearchParams();
-  const router = useRouter();
-  
-  const songName = params.songName as string;
-  const artist = params.artist as string;
-  const listeners = params.listeners as string;
-  
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  // ✅ USAR useQuery PARA OBTENER LA IMAGEN
-  const { data: artistImage, isLoading: imageLoading } = useQuery({
-    queryKey: ['artist-image', artist],
-    queryFn: () => getArtistImage(artist),
-  });
-
-  useEffect(() => {
-    loadFavorites();
-  }, []);
-
-  const loadFavorites = async () => {
-    try {
-      const favorites = await AsyncStorage.getItem('favorite_artists');
-      const favoriteList = favorites ? JSON.parse(favorites) : [];
-      setIsFavorite(favoriteList.includes(artist));
-    } catch (error) {
-      console.log('Error loading favorites');
-    }
-  };
-
-  const toggleFavorite = async () => {
-    try {
-      const favorites = await AsyncStorage.getItem('favorite_artists');
-      let favoriteList = favorites ? JSON.parse(favorites) : [];
-      
-      if (isFavorite) {
-        favoriteList = favoriteList.filter((art: string) => art !== artist);
-      } else {
-        favoriteList.push(artist);
-      }
-      
-      await AsyncStorage.setItem('favorite_artists', JSON.stringify(favoriteList));
-      setIsFavorite(!isFavorite);
-    } catch (error) {
-      console.log('Error saving favorite');
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      {/* ✅ MOSTRAR IMAGEN DEL ARTISTA */}
-      {imageLoading ? (
-        <ActivityIndicator size="large" color="#1DB954" />
-      ) : artistImage ? (
-        <Image 
-          source={{ uri: artistImage }} 
-          style={styles.artistImage}
-        />
-      ) : (
-        <View style={styles.placeholderImage}>
-          <Text>🎤</Text>
-        </View>
-      )}
-      
-      <Text style={styles.songTitle}>{songName}</Text>
-      <Text style={styles.artist}>por {artist}</Text>
-      
-      <View style={styles.infoBox}>
-        <Text style={styles.infoText}>Oyentes: {listeners}</Text>
-      </View>
-
-      <TouchableOpacity 
-        style={[styles.favoriteButton, isFavorite && styles.favoriteActive]}
-        onPress={toggleFavorite}
-      >
-        <Text style={styles.favoriteText}>
-          {isFavorite ? '★ En Favoritos' : '☆ Agregar a Favoritos'}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
-        <Text style={styles.backText}>Volver</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  artistImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100, // ← Circular para foto de artista
-    marginBottom: 20
-  },
-  placeholderImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    marginBottom: 20,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  songTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8
-  },
-  artist: {
-    fontSize: 20,
-    color: 'gray',
-    marginBottom: 30,
-    textAlign: 'center'
-  },
-  infoBox: {
-    backgroundColor: '#f0f0f0',
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 30,
-    width: '80%',
-    alignItems: 'center'
-  },
-  infoText: {
-    fontSize: 18,
-    fontWeight: '600'
-  },
-  favoriteButton: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-    width: '80%',
-    alignItems: 'center'
-  },
-  favoriteActive: {
-    backgroundColor: '#FF9800'
-  },
-  favoriteText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold'
-  },
-  backButton: {
-    padding: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    width: '60%',
-    alignItems: 'center'
-  },
-  backText: {
-    fontSize: 16,
-    color: '#666'
-  }
-});
-
-
-
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useQuery } from '@tanstack/react-query';
-
-const getArtistImage = async (artistName: string) => {
-  const apiKey = 'ac66e02c5316a0244f53b2cc88d16c3c';
-  const response = await fetch(
-    `http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=${encodeURIComponent(artistName)}&api_key=${apiKey}&format=json`
-  );
-  
-  if (!response.ok) throw new Error('Error loading artist image');
-  
-  const data = await response.json();
-  return data.artist.image[3]?.['#text'];
-};
-
-export default function SongDetailScreen() {
-  const params = useLocalSearchParams();
-  const router = useRouter();
-  
-  const songName = params.songName as string;
-  const artist = params.artist as string;
-  const listeners = params.listeners as string;
-  
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  const { data: artistImage, isLoading: imageLoading } = useQuery({
-    queryKey: ['artist-image', artist],
-    queryFn: () => getArtistImage(artist),
-  });
-
-  useEffect(() => {
-    loadFavorites();
-  }, []);
-
-  const loadFavorites = async () => {
-    try {
-      const favorites = await AsyncStorage.getItem('favorite_artists');
-      const favoriteList = favorites ? JSON.parse(favorites) : [];
-      setIsFavorite(favoriteList.includes(artist));
-    } catch (error) {
-      console.log('Error loading favorites');
-    }
-  };
-
-  const toggleFavorite = async () => {
-    try {
-      const favorites = await AsyncStorage.getItem('favorite_artists');
-      let favoriteList = favorites ? JSON.parse(favorites) : [];
-      
-      if (isFavorite) {
-        favoriteList = favoriteList.filter((art: string) => art !== artist);
-      } else {
-        favoriteList.push(artist);
-      }
-      
-      await AsyncStorage.setItem('favorite_artists', JSON.stringify(favoriteList));
-      setIsFavorite(!isFavorite);
-    } catch (error) {
-      console.log('Error saving favorite');
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      {imageLoading ? (
-        <ActivityIndicator size="large" color="#1DB954" />
-      ) : artistImage ? (
-        <Image 
-          source={{ uri: artistImage }} 
-          style={styles.artistImage}
-        />
-      ) : (
-        <View style={styles.placeholderImage}>
-          <Text>🎤</Text>
-        </View>
-      )}
-      
-      <Text style={styles.songTitle}>{songName}</Text>
-      <Text style={styles.artist}>por {artist}</Text>
-      
-      <View style={styles.infoBox}>
-        <Text style={styles.infoText}>Oyentes: {listeners}</Text>
-      </View>
-
-      <TouchableOpacity 
-        style={[styles.favoriteButton, isFavorite && styles.favoriteActive]}
-        onPress={toggleFavorite}
-      >
-        <Text style={styles.favoriteText}>
-          {isFavorite ? '★ En Favoritos' : '☆ Agregar a Favoritos'}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
-        <Text style={styles.backText}>Volver</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  artistImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    marginBottom: 20
-  },
-  placeholderImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    marginBottom: 20,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  songTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8
-  },
-  artist: {
-    fontSize: 20,
-    color: 'gray',
-    marginBottom: 30,
-    textAlign: 'center'
-  },
-  infoBox: {
-    backgroundColor: '#f0f0f0',
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 30,
-    width: '80%',
-    alignItems: 'center'
-  },
-  infoText: {
-    fontSize: 18,
-    fontWeight: '600'
-  },
-  favoriteButton: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-    width: '80%',
-    alignItems: 'center'
-  },
-  favoriteActive: {
-    backgroundColor: '#FF9800'
-  },
-  favoriteText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold'
-  },
-  backButton: {
-    padding: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    width: '60%',
-    alignItems: 'center'
-  },
-  backText: {
-    fontSize: 16,
-    color: '#666'
-  }
-});
-
-
-
-🎵 detalle.tsx - Completo
-
-```typescript
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useQuery } from '@tanstack/react-query';
-
-const getArtistImage = async (artistName: string) => {
-  const apiKey = 'ac66e02c5316a0244f53b2cc88d16c3c';
-  const response = await fetch(
-    `http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist=${encodeURIComponent(artistName)}&api_key=${apiKey}&format=json`
-  );
-  
-  if (!response.ok) throw new Error('Error loading artist image');
-  
-  const data = await response.json();
-  return data.artist.image[3]?.['#text'];
-};
-
-export default function SongDetailScreen() {
-  const params = useLocalSearchParams();
-  const router = useRouter();
-  
-  const songName = params.songName as string;
-  const artist = params.artist as string;
-  const listeners = params.listeners as string;
-  
-  const [isFavorite, setIsFavorite] = useState(false);
-
-  const { data: artistImage, isLoading: imageLoading } = useQuery({
-    queryKey: ['artist-image', artist],
-    queryFn: () => getArtistImage(artist),
-  });
-
-  useEffect(() => {
-    loadFavorites();
-  }, []);
-
-  const loadFavorites = async () => {
-    try {
-      const favorites = await AsyncStorage.getItem('favorite_artists');
-      const favoriteList = favorites ? JSON.parse(favorites) : [];
-      setIsFavorite(favoriteList.includes(artist));
-    } catch (error) {
-      console.log('Error loading favorites');
-    }
-  };
-
-  const toggleFavorite = async () => {
-    try {
-      const favorites = await AsyncStorage.getItem('favorite_artists');
-      let favoriteList = favorites ? JSON.parse(favorites) : [];
-      
-      if (isFavorite) {
-        favoriteList = favoriteList.filter((art: string) => art !== artist);
-      } else {
-        favoriteList.push(artist);
-      }
-      
-      await AsyncStorage.setItem('favorite_artists', JSON.stringify(favoriteList));
-      setIsFavorite(!isFavorite);
-    } catch (error) {
-      console.log('Error saving favorite');
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      {imageLoading ? (
-        <ActivityIndicator size="large" color="#1DB954" />
-      ) : artistImage ? (
-        <Image 
-          source={{ uri: artistImage }} 
-          style={styles.artistImage}
-        />
-      ) : (
-        <View style={styles.placeholderImage}>
-          <Text>🎤</Text>
-        </View>
-      )}
-      
-      <Text style={styles.songTitle}>{songName}</Text>
-      <Text style={styles.artist}>por {artist}</Text>
-      
-      <View style={styles.infoBox}>
-        <Text style={styles.infoText}>Oyentes: {listeners}</Text>
-      </View>
-
-      <TouchableOpacity 
-        style={[styles.favoriteButton, isFavorite && styles.favoriteActive]}
-        onPress={toggleFavorite}
-      >
-        <Text style={styles.favoriteText}>
-          {isFavorite ? '★ En Favoritos' : '☆ Agregar a Favoritos'}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={styles.backButton}
-        onPress={() => router.back()}
-      >
-        <Text style={styles.backText}>Volver</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  artistImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    marginBottom: 20
-  },
-  placeholderImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    marginBottom: 20,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  songTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8
-  },
-  artist: {
-    fontSize: 20,
-    color: 'gray',
-    marginBottom: 30,
-    textAlign: 'center'
-  },
-  infoBox: {
-    backgroundColor: '#f0f0f0',
-    padding: 20,
-    borderRadius: 10,
-    marginBottom: 30,
-    width: '80%',
-    alignItems: 'center'
-  },
-  infoText: {
-    fontSize: 18,
-    fontWeight: '600'
-  },
-  favoriteButton: {
-    backgroundColor: '#4CAF50',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-    width: '80%',
-    alignItems: 'center'
-  },
-  favoriteActive: {
-    backgroundColor: '#FF9800'
-  },
-  favoriteText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold'
-  },
-  backButton: {
-    padding: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    width: '60%',
-    alignItems: 'center'
-  },
-  backText: {
-    fontSize: 16,
-    color: '#666'
-  }
-});
+### **Backend:**
+```bash
+cd backend
+npm install
+npm start
 ```
+
+### **Frontend:**
+```bash
+# En otra terminal, desde la carpeta principal
+npm start
+```
+
+## **📊 ENDPOINTS DISPONIBLES**
+
+1. `GET /api/lugares` - Listar todos
+2. `GET /api/lugares/:id` - Obtener uno
+3. `POST /api/lugares` - Crear nuevo
+4. `PUT /api/lugares/:id` - Actualizar
+5. `DELETE /api/lugares/:id` - Eliminar
+
+## **✅ RESULTADO EN 25 MINUTOS:**
+
+- ✅ **Backend Express** con 5 endpoints
+- ✅ **Base de datos MySQL** funcionando
+- ✅ **Frontend React Native** consumiendo API
+- ✅ **CRUD completo** para lugares
+- ✅ **Arquitectura fullstack** real
+
+**¿Listo para implementar? Solo copia y pega cada archivo en su carpeta correspondiente.**
