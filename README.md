@@ -774,3 +774,128 @@ npm start
 - ✅ **Arquitectura fullstack** real
 
 **¿Listo para implementar? Solo copia y pega cada archivo en su carpeta correspondiente.**
+
+**No, no funcionaría directamente. Te explico por qué:**
+
+## **🚨 PROBLEMAS TÉCNICOS:**
+
+### **1. Expo Go ≠ Servidor Web**
+- **Expo Go** es solo un cliente para probar apps
+- **No puede ejecutar servidores** Express o bases de datos
+- Es como querer ejecutar Apache en Chrome
+
+### **2. Backend necesita entorno Node.js**
+- Express, MySQL requieren Node.js
+- Expo Go solo ejecuta JavaScript del lado del cliente
+- No tiene acceso al sistema de archivos ni puertos
+
+### **3. MySQL necesita servidor dedicado**
+- Base de datos debe correr en servidor separado
+- No puedes instalar MySQL en Expo Go
+
+## **🎯 OPCIONES REALES:**
+
+### **Opción 1: Backend en la nube (Recomendado)**
+```javascript
+// Usar servicios como:
+// - Render.com (gratis)
+// - Railway.app (gratis) 
+// - Heroku (gratis)
+// - AWS/Azure (créditos gratis)
+
+const API_URL = 'https://tu-api.render.com/api';
+```
+
+### **Opción 2: Backend local + Tunnel**
+```bash
+# 1. Ejecutar backend localmente
+cd backend
+npm start  # → http://localhost:3000
+
+# 2. Crear tunnel público
+npx localtunnel --port 3000  # → https://tu-app.loca.lt
+
+# 3. En la app usar:
+const API_URL = 'https://tu-app.loca.lt/api';
+```
+
+### **Opción 3: Servicios Backend-as-a-Service**
+```javascript
+// Usar Firebase, Supabase, etc.
+const API_URL = 'https://tu-proyecto.supabase.co/rest/v1';
+```
+
+## **📱 SOLUCIÓN PARA PRUEBA TÉCNICA:**
+
+### **Backend Desplegado + Frontend en Expo Go**
+```
+[Tu Computadora]          [Internet]              [Expo Go en Teléfono]
+Backend Local    →    Tunnel/Cloud    →    App consumiendo API real
+```
+
+### **Implementación rápida:**
+1. **Prepara tu backend** localmente
+2. **Usa localtunnel** para exponerlo
+3. **Conecta tu app** a la URL del tunnel
+4. **¡Funciona en Expo Go!**
+
+## **🔧 CÓDIGO LISTO PARA PROBAR:**
+
+### **1. Backend (igual que antes)**
+```javascript
+// backend/server.js - Sin cambios
+const express = require('express');
+const app = express();
+app.use(cors());
+
+// Tus 5 endpoints aquí...
+app.listen(3000);
+```
+
+### **2. Exponer backend**
+```bash
+cd backend
+npm start  # En una terminal
+npx localtunnel --port 3000  # En otra terminal
+```
+
+### **3. Frontend actualizado**
+```typescript
+// En tu app React Native
+const API_URL = 'https://tu-app.loca.lt/api'; // ← URL que te da localtunnel
+
+export default function MapaScreen() {
+  const [lugares, setLugares] = useState([]);
+
+  useEffect(() => {
+    const cargarLugares = async () => {
+      try {
+        const response = await fetch(`${API_URL}/lugares`);
+        const data = await response.json();
+        setLugares(data);
+      } catch (error) {
+        console.log('Error cargando datos reales:', error);
+      }
+    };
+    cargarLugares();
+  }, []);
+
+  // ... resto del código
+}
+```
+
+## **✅ VENTAJAS DE ESTE ENFOQUE:**
+
+- ✅ **Backend real** con Express + MySQL
+- ✅ **Funciona en Expo Go** (vía tunnel)
+- ✅ **Demuestras conocimiento fullstack**
+- ✅ **API real con CRUD completo**
+- ✅ **Más impresionante en entrevista**
+
+## **⚠️ CONSIDERACIONES:**
+
+- **Tunnel es temporal** - se cierra al parar el proceso
+- **Para demo permanente** necesitas hosting real
+- **Velocidad depende** de tu internet
+
+**¿Quieres que te guíe paso a paso con localtunnel?** Es la forma más rápida de tener tu backend funcionando con Expo Go.
